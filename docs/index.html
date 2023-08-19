@@ -8,6 +8,9 @@
   font-feature-settings: "palt";
   font-family: sans-serif;
 }
+:root {
+  --col-width: 50px;
+}
 .clearfix::after {
    content: "";
    display: block;
@@ -21,6 +24,7 @@
   border: 1px solid #ddd;
   border-radius: 5px;
 }
+.achievement-chart,
 .edujob-chart,
 .grant-chart,
 .year-chart {
@@ -43,10 +47,10 @@
   border-width: 0 0 5px;
   overflow: hidden;
 }
-.edujob-cell.edu-cell { border-color: orange; }
-.edujob-cell.job-cell { border-color: orangered; }
-.grant-cell.isPI    { border-color: forestgreen; }
-.grant-cell.isnotPI { border-color: lightgreen; }
+.edujob-cell.edu-cell { border-color: orange;      }
+.edujob-cell.job-cell { border-color: orangered;   }
+.grant-cell.isPI      { border-color: forestgreen; }
+.grant-cell.isnotPI   { border-color: lightgreen;  }
 .edujob-cell span,
 .grant-cell span {
   display: inline-block;
@@ -55,16 +59,40 @@
   text-align: left;
   white-space: nowrap;
 }
+.achievement-row {
+  height: 100px;
+}
+.achievement-col {
+  float: left;
+  display: flex;
+  flex-direction: column-reverse;
+  width: calc(var(--col-width) - 4px);
+  height: 100px;
+  margin: 0 4px 0 0;
+}
+.achievement-cell {
+  width: 100%;
+  height: 5px;
+  margin: 1px 0 0;
+  align-self: flex-end;
+}
+.achievement-cell.item-first-or-corresp { background: blueviolet; }
+.achievement-cell.item-other            { background: violet;     }
 .year-cell {
   float: left;
   display: block;
-  width: 46px;
+  width: calc(var(--col-width) - 4px);
   margin: 0 4px 0 0;
   padding: 5px 0 0;
   font-size: 0.8em;
   line-height: 1em;
   text-align: center;
   border: 1px solid gray;
+  border-width: 5px 0 0;
+}
+.year-cell.now {
+  width: 100px;
+  border: 1px solid #ddd;
   border-width: 5px 0 0;
 }
 </style>
@@ -86,13 +114,24 @@
 <div>
   <h2>キャリアチャート</h2>
   <div class="career-chart" v-if="career.latestYear">
+    <div class="achievement-chart">
+      <div class="achievement-row">
+        <div class="achievement-col"
+             v-for="(col, i) in chart.achievements.journal">
+          <span class="achievement-cell"></span>
+          <span class="achievement-cell"
+                v-for="item in col"
+                :class="{'item-first-or-corresp': item == 1, 'item-other': item == 0}"></span>
+        </div>
+      </div>
+    </div>
     <div class="grant-chart">
       <div class="grant-row"
            v-for="(row, i) in chart.grants.slice().reverse()">
         <span class="grant-cell"
               v-for="(item, j) in row"
               :class="{'isPI': item.isPI, 'isnotPI': !item.isPI}"
-              :style="{width: (50 * (item.to - item.from)) + 'px', left: (50 * (item.from - career.firstYear)) + 'px'}">
+              :style="getStackCellStyle(item)">
           <span v-html="item.name"></span>
         </span>
       </div>
@@ -103,14 +142,15 @@
         <span class="edujob-cell"
               v-for="(item, j) in row"
               :class="{'edu-cell': item.isEdu, 'job-cell': !item.isEdu}"
-              :style="{width: (50 * (item.to - item.from)) + 'px', left: (50 * (item.from - career.firstYear)) + 'px'}">
+              :style="getStackCellStyle(item)">
           <span v-html="item.name"></span>
         </span>
       </div>
     </div>
     <div class="year-chart clearfix">
       <span class="year-cell"
-            v-for="i in (career.latestYear - career.firstYear)">${ career.firstYear + i - 1}</span>
+            v-for="i in (career.latestYear - career.firstYear + 1)">${ career.firstYear + i - 1}</span>
+      <span class="year-cell now"></span>
     </div>
   </div>
 </div>
@@ -188,6 +228,9 @@ var app = new Vue({
       }
     },
     chart: {
+      setting: {
+        cellWidth: 50,
+      },
       educationsAndJobs: [],
       grants: [],
       achievements: {
@@ -252,6 +295,19 @@ var app = new Vue({
         this.career.educationsAndJobs.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': jobName, 'isEdu': false});
         this.updateCareerPeriod(yearFrom.year, yearTo.year);
       }
+      // Grant History
+      for(let i=0; i < this.rmJson.research_projects.length; i++) {
+        let grant = this.rmJson.research_projects[i];
+        let yearFrom  = this.getFinancialYear(grant.from_date);
+        let yearTo    = this.getFinancialYear(grant.to_date);
+        let grantName = this.getGrantName(grant);
+        let grantRole = !('research_project_owner_role' in grant) ? 'undefined'
+                      : grant.research_project_owner_role == 'principal_investigator' ? 'principal'
+                      : grant.research_project_owner_role == 'coinvestigator' ? 'coinvestigator'
+                      : 'others';
+        this.career.grants.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': grantName, 'role': grantRole});
+        this.updateCareerPeriod(yearFrom.year, yearTo.year);
+      }
       // Achievement History (paper)
       for(let i=0; i < this.rmJson.published_papers.length; i++) {
         let achvmnt = this.rmJson.published_papers[i];
@@ -289,19 +345,6 @@ var app = new Vue({
           }
         }
       }
-      // Grant History
-      for(let i=0; i < this.rmJson.research_projects.length; i++) {
-        let grant = this.rmJson.research_projects[i];
-        let yearFrom  = this.getFinancialYear(grant.from_date);
-        let yearTo    = this.getFinancialYear(grant.to_date);
-        let grantName = this.getGrantName(grant);
-        let grantRole = !('research_project_owner_role' in grant) ? 'undefined'
-                      : grant.research_project_owner_role == 'principal_investigator' ? 'principal'
-                      : grant.research_project_owner_role == 'coinvestigator' ? 'coinvestigator'
-                      : 'others';
-        this.career.grants.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': grantName, 'role': grantRole});
-        this.updateCareerPeriod(yearFrom.year, yearTo.year);
-      }
     },
     getFinancialYear(targetDate, isFrom) {
       if(targetDate == "9999"){
@@ -314,7 +357,7 @@ var app = new Vue({
     },
     updateCareerPeriod(yearFrom, yearTo) {
       if(this.career.firstYear  > yearFrom) { this.career.firstYear  = yearFrom; }
-      if(this.career.latestYear < yearTo  ) { this.career.latestYear = yearTo;   }
+      if(this.career.latestYear < yearTo  ) { this.career.latestYear = Math.min(new Date().getFullYear(), yearTo);   }
     },
     getEduName(edu) {
       if     (edu.ja.includes("修士"))       { return '修士課程' }
@@ -352,6 +395,8 @@ var app = new Vue({
       return grantName;
     },
     plotCareerHistory() {
+      // set CSS property
+      document.documentElement.style.setProperty('--col-width', this.chart.setting.cellWidth + "px");
       // Education and Job History
       for(let i=0; i<this.career.educationsAndJobs.length; i++) {
         let newItem = this.getEducationAndJobItem(this.career.educationsAndJobs[i]);
@@ -392,6 +437,21 @@ var app = new Vue({
           }
         }
       }
+      // Achievement History (paper)
+      achievementTypeList = ['journal', 'intlConf', 'domesticConf'];
+      for(let achvmntType of achievementTypeList) {
+        this.chart.achievements[achvmntType] = {};
+        for(let i=this.career.firstYear; i<=this.career.latestYear; i++) {
+          let year = String(i);
+          if(year in this.career.achievements[achvmntType]) {
+            let achvmnt = this.career.achievements[achvmntType][year];
+            let firstCorrespCount = achvmnt.firstCorresp + achvmnt.first + achvmnt.corresp;
+            this.chart.achievements[achvmntType][year] = Array(firstCorrespCount).fill(1).concat(Array(achvmnt.other).fill(0));
+          } else {
+            this.chart.achievements[achvmntType][year] = [];
+          }
+        }
+      }
     },
     getEducationAndJobItem(item) {
       return {
@@ -409,6 +469,12 @@ var app = new Vue({
         isPI: item.role == 'principal',
       };
     },
+    getStackCellStyle(item) {
+      return {
+        width: (this.chart.setting.cellWidth * (item.to - item.from)) + 'px',
+        left: (this.chart.setting.cellWidth * (item.from - this.career.firstYear)) + 'px'
+      };
+    }
   },
   computed: {
   }
