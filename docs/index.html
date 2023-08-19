@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+<meta charset="utf-8">
+<title>SuccessRiver CareerChart</title>
+<style>
+</style>
+<div class="app" id="app">
+<h1>SuccessRiver CareerChart</h1>
+<div class="file-upload">
+  <div v-if="rmFile == null">
+    <h2>researchmapのエクスポートファイルを選択</h2>
+    <input type="file" id="researchmap-file-input" @change="selectrmFile"></li>
+  </div>
+  <div v-else>
+    ${ rmFile.name }
+    <span @click="rmFile = null">ファイルを変更する</span>
+  </div>
+</div>
+<div class="display-option">
+  <h2>表示オプション</h2>
+</div>
+<div class="career-chart">
+  <h2>出力結果</h2>
+  <h3>学歴・職歴</h3>
+  ${ career.educationsAndJobs }
+  <h3>予算獲得状況</h3>
+  ${ career.grants }
+  <h3>業績</h3>
+  ${ career.achievements }
+  <h3>rawJson</h3>
+  ${ rmJson }
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js"></script>
+<script>
+const $ = (id) => { return document.getElementById(id); }
+const JSONL = {
+  parse: (jsonl) => {
+    let jsonlArray = jsonl.split("\n").filter(function (s) { return s !== ""; });
+     let jsonlObj = {}
+    for(let i=0; i<jsonlArray.length; i++) {
+      jsonlRow = JSON.parse(jsonlArray[i]);
+       if(!(jsonlRow.insert.type in jsonlObj)) {
+         jsonlObj[jsonlRow.insert.type] = [];
+       }
+      jsonlObj[jsonlRow.insert.type].push(jsonlRow.merge);
+    }
+    return jsonlObj;
+  }
+}
+var app = new Vue({
+  delimiters: ['${', '}'],
+  el: '#app',
+  data: {
+    rmFile: null,
+    rmJson: null,
+    career: {
+      educationsAndJobs: [],
+      achievements: [],
+      grants: []
+    }
+  },
+  created: function() {
+  },
+  mounted: function() {
+  },
+  destroyed: function () {
+  },
+  methods: {
+    selectrmFile: function(e) {
+      const files = e.target.files || e.dataTransfer.files;
+      this.rmFile = (files[0].name.split('.').pop() == 'jsonl') ? files[0] : null;
+      var reader = new FileReader();
+      reader.readAsText(this.rmFile);
+      reader.onload = () => {  
+        this.rmJson = JSONL.parse(reader.result);
+        this.visualizeCareer();
+      };
+    },
+    visualizeCareer() {
+    	// Education History
+      for(let i=0; i<this.rmJson.education.length; i++) {
+        let edu = this.rmJson.education[i];
+        let yearFrom = this.getFinancialYear(edu.from_date)
+        let yearTo   = this.getFinancialYear(edu.to_date)
+        let eduName  = '';
+        if('course' in edu) {
+        	eduName = this.getEduName(edu.course);
+        }
+        if(eduName == '' && 'department' in edu) {
+        	eduName = this.getEduName(edu.department);
+        }
+        this.career.educationsAndJobs.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': eduName});
+      }
+      // Job History
+      for(let i=0; i<this.rmJson.research_experience.length; i++) {
+        let job = this.rmJson.research_experience[i];
+        yearFrom = this.getFinancialYear(job.from_date)
+        yearTo   = this.getFinancialYear(job.to_date)
+        let jobName  = '';
+        if('job' in job) {
+        	jobName = this.getJobName(job);
+        }
+        this.career.educationsAndJobs.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': jobName});
+      }
+      // Achievement History
+      // Grants History
+    },
+    getFinancialYear(targetDate, isFrom) {
+      if(targetDate == "9999"){
+        return {'year': new Date().getFullYear(), 'month': isFrom ? 4 : 3};
+      }
+      dt = targetDate.split('-');
+      year  = (dt.length > 0) ? parseInt(dt[0]) : new Date.now().getYear();
+      month = (dt.length > 1) ? parseInt(dt[1]) : isFrom ? 4 : 3;
+      return {'year': year, 'month': month}
+    },
+    getEduName(edu) {
+      if     (edu.ja.includes("修士"))       { return '修士課程' }
+      else if(edu.ja.includes("修士課程"))    { return '修士課程' }
+      else if(edu.ja.includes("博士前期課程")) { return '博士前期課程' }
+      else if(edu.ja.includes("博士後期課程")) { return '博士後期課程' }
+      else if(edu.ja.includes("博士課程"))    { return '博士課程' }
+      else if(edu.ja.includes("博士"))       { return '博士課程' }
+      else if(edu.ja.includes("研究科"))     { return '大学院' }
+      else                                  { return '' }
+    },
+    getJobName(job) {
+      if('affiliation' in job) {
+        // jobNameLength = job.affiliation.ja.length + job.job.ja.length;
+        jobName = job.affiliation.ja + "<br>" + job.job.ja;
+      } else {
+        jobName = job.job.ja;
+      }
+	    if(jobName.includes("日本学術振興会")) {
+        jobName = jobName.includes("DC1") ? "学振DC1"
+        				: jobName.includes("DC2") ? "学振DC2"
+        				: jobName.includes("RPD") ? "学振RPD"
+        				: jobName.includes("SPD") ? "学振SPD"
+        				: jobName.includes("PD")  ? "学振PD"  : 'その他';
+	    }
+    	return jobName;
+    }
+  },
+  computed: {
+  }
+});
+</script>
+</html>
