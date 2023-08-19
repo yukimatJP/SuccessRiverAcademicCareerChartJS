@@ -3,6 +3,56 @@
 <meta charset="utf-8">
 <title>SuccessRiver CareerChart</title>
 <style>
+*,*::before,*::after{box-sizing:border-box}ul[class],ol[class]{padding:0}body,h1,h2,h3,h4,p,ul[class],ol[class],figure,blockquote,dl,dd{margin:0}html{scroll-behavior:smooth}body{min-height:100vh;text-rendering:optimizeSpeed;line-height:1.5}ul[class],ol[class]{list-style:none}a:not([class]){text-decoration-skip-ink:auto}img,picture{max-width:100%;display:block}article>*+*{margin-top:1em}input,button,textarea,select{font:inherit}@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important}}
+* {
+  font-feature-settings: "palt";
+  font-family: sans-serif;
+}
+.clearfix::after {
+   content: "";
+   display: block;
+   clear: both;
+}
+.app > div {
+  margin: 20px;
+}
+.career-chart {
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+.edujob-row {
+  position: relative;
+  height: 50px;
+}
+.edujob-cell {
+  position: absolute;
+  display: flex;
+  height: 40px;
+  padding: 0 0 5px;
+  text-align: center;
+  font-size: 0.8em;
+  line-height: 1em;
+  border: 1px solid orange;
+  border-width: 0 0 5px;
+}
+.edujob-cell span {
+  display: block;
+  width: 100%;
+  align-self: flex-end;
+}
+.year-cell {
+  float: left;
+  display: block;
+  width: 46px;
+  margin: 0 4px 0 0;
+  padding: 5px 0 0;
+  font-size: 0.8em;
+  line-height: 1em;
+  text-align: center;
+  border: 1px solid gray;
+  border-width: 5px 0 0;
+}
 </style>
 <div class="app" id="app">
 <h1>SuccessRiver CareerChart</h1>
@@ -19,8 +69,27 @@
 <div class="display-option">
   <h2>表示オプション</h2>
 </div>
-<div class="career-chart">
-  <h2>出力結果</h2>
+<div>
+  <h2>キャリアチャート</h2>
+  <div class="career-chart" v-if="career.latestYear">
+    <div class="edujob-chart">
+      <div class="edujob-row"
+           v-for="(row, i) in chart.educationsAndJobs.slice().reverse()">
+        <span class="edujob-cell"
+              v-for="(item, j) in row"
+              :style="{width: (50 * (item.to - item.from)) + 'px', left: (50 * (item.from - career.firstYear)) + 'px'}">
+          <span v-html="item.name"></span>
+        </span>
+      </div>
+    </div>
+    <div class="year-chart clearfix">
+      <span class="year-cell"
+            v-for="i in (career.latestYear - career.firstYear)">${ career.firstYear + i - 1}</span>
+    </div>
+  </div>
+</div>
+<div class="career-data">
+  <h2>キャリアデータ</h2>
   <h3>研究者情報</h3>
   ${ researcher }<br>
   ${ career.firstYear } 〜 ${ career.latestYear }
@@ -84,13 +153,22 @@ var app = new Vue({
       firstYear: new Date().getFullYear(),
       latestYear: 0,
       educationsAndJobs: [],
+      grants: [],
       achievements: {
         journal:      {total: 0},
         intlConf:     {total: 0},
         domesticConf: {total: 0},
         total: 0,
+      }
+    },
+    chart: {
+      educationsAndJobs: [],
+      grants: [],
+      achievements: {
+        journal:      [],
+        intlConf:     [],
+        domesticConf: [],
       },
-      grants: []
     }
   },
   created: function() {
@@ -107,10 +185,11 @@ var app = new Vue({
       reader.readAsText(this.rmFile);
       reader.onload = () => {  
         this.rmJson = JSONL.parse(reader.result);
-        this.visualizeCareer();
+        this.parseCareerHistory();
+        this.plotCareerHistory();
       };
     },
-    visualizeCareer() {
+    parseCareerHistory() {
       // Basic Info
       if('researchers' in this.rmJson) {
         let researcher = this.rmJson.researchers[0];
@@ -136,7 +215,7 @@ var app = new Vue({
           eduName = this.getEduName(edu.department);
         }
         this.career.educationsAndJobs.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': eduName});
-        this.updateCareerPeriod(yearFrom, yearTo);
+        this.updateCareerPeriod(yearFrom.year, yearTo.year);
       }
       // Job History
       for(let i=0; i < this.rmJson.research_experience.length; i++) {
@@ -145,7 +224,7 @@ var app = new Vue({
         let yearTo   = this.getFinancialYear(job.to_date);
         let jobName  = ('job' in job) ? this.getJobName(job) : '';
         this.career.educationsAndJobs.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': jobName});
-        this.updateCareerPeriod(yearFrom, yearTo);
+        this.updateCareerPeriod(yearFrom.year, yearTo.year);
       }
       // Achievement History (paper)
       for(let i=0; i < this.rmJson.published_papers.length; i++) {
@@ -195,12 +274,12 @@ var app = new Vue({
                       : grant.research_project_owner_role == 'coinvestigator' ? 'coinvestigator'
                       : 'others';
         this.career.grants.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': grantName, 'role': grantRole});
-        this.updateCareerPeriod(yearFrom, yearTo);
+        this.updateCareerPeriod(yearFrom.year, yearTo.year);
       }
     },
     getFinancialYear(targetDate, isFrom) {
       if(targetDate == "9999"){
-        return {'year': new Date().getFullYear(), 'month': isFrom ? 4 : 3};
+        return {'year': new Date().getFullYear() + 1, 'month': isFrom ? 4 : 3};
       }
       dt = targetDate.split('-');
       year  = (dt.length > 0) ? parseInt(dt[0]) : new Date.now().getYear();
@@ -219,7 +298,7 @@ var app = new Vue({
       else if(edu.ja.includes("博士課程"))    { return '博士課程' }
       else if(edu.ja.includes("博士"))       { return '博士課程' }
       else if(edu.ja.includes("研究科"))     { return '大学院' }
-      else                                  { return '' }
+      else                                  { return '-' }
     },
     getJobName(job) {
       if('affiliation' in job) {
@@ -247,6 +326,39 @@ var app = new Vue({
       }
       return grantName;
     },
+    plotCareerHistory() {
+      // Education and Job History
+      for(let i=0; i<this.career.educationsAndJobs.length; i++) {
+        let newItem = this.getEducationsAndJobsHistoryItem(this.career.educationsAndJobs[i]);
+        console.log(i, newItem);
+        if(this.chart.educationsAndJobs.length == 0) {
+          this.chart.educationsAndJobs.push([newItem]);
+        } else {
+          for(let j=0; j<this.chart.educationsAndJobs.length; j++) {
+            console.log(i, j, );
+            if(this.chart.educationsAndJobs[j][0].from > newItem.to) {
+              this.chart.educationsAndJobs[j].unshift(newItem);
+              break;
+            } else if(this.chart.educationsAndJobs[j][this.chart.educationsAndJobs[j].length-1].to < newItem.from) {
+              this.chart.educationsAndJobs[j].push(newItem);
+              break;
+            } else if(j == this.chart.educationsAndJobs.length - 1) {
+              this.chart.educationsAndJobs.push([newItem]);
+              break;
+            }
+          }
+        }
+        console.log(JSON.stringify(this.chart.educationsAndJobs));
+      }
+      // console.log(this.chart.educationsAndJobs);
+    },
+    getEducationsAndJobsHistoryItem(eaj) {
+      return {
+        from: parseFloat((eaj.yearFrom.year + eaj.yearFrom.month / 12.0).toFixed(2)),
+        to:   parseFloat((eaj.yearTo.year   + eaj.yearTo.month   / 12.0).toFixed(2)),
+        name: eaj.name
+      };
+    }
   },
   computed: {
   }
