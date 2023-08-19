@@ -90,8 +90,8 @@ var app = new Vue({
     	// Education History
       for(let i=0; i < this.rmJson.education.length; i++) {
         let edu = this.rmJson.education[i];
-        let yearFrom = this.getFinancialYear(edu.from_date)
-        let yearTo   = this.getFinancialYear(edu.to_date)
+        let yearFrom = this.getFinancialYear(edu.from_date);
+        let yearTo   = this.getFinancialYear(edu.to_date);
         let eduName  = '';
         if('course' in edu) {
         	eduName = this.getEduName(edu.course);
@@ -104,12 +104,9 @@ var app = new Vue({
       // Job History
       for(let i=0; i < this.rmJson.research_experience.length; i++) {
         let job = this.rmJson.research_experience[i];
-        yearFrom = this.getFinancialYear(job.from_date)
-        yearTo   = this.getFinancialYear(job.to_date)
-        let jobName  = '';
-        if('job' in job) {
-        	jobName = this.getJobName(job);
-        }
+        let yearFrom = this.getFinancialYear(job.from_date);
+        let yearTo   = this.getFinancialYear(job.to_date);
+        let jobName  = ('job' in job) ? this.getJobName(job) : '';
         this.career.educationsAndJobs.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': jobName});
       }
       // Achievement History (paper)
@@ -136,7 +133,18 @@ var app = new Vue({
 		    	}
 		    }
       }
-      // Grants History
+      // Grant History
+      for(let i=0; i < this.rmJson.research_projects.length; i++) {
+      	let grant = this.rmJson.research_projects[i];
+        let yearFrom  = this.getFinancialYear(grant.from_date);
+        let yearTo    = this.getFinancialYear(grant.to_date);
+        let grantName = this.getGrantName(grant);
+        let grantRole = !('research_project_owner_role' in grant) ? 'undefined'
+        							: grant.research_project_owner_role == 'principal_investigator' ? 'principal'
+        							: grant.research_project_owner_role == 'coinvestigator' ? 'coinvestigator'
+        							: 'others';
+	    	this.career.grants.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': grantName, 'role': grantRole});
+      }
     },
     getFinancialYear(targetDate, isFrom) {
       if(targetDate == "9999"){
@@ -172,7 +180,17 @@ var app = new Vue({
         				: jobName.includes("PD")  ? "学振PD"  : 'その他';
 	    }
     	return jobName;
-    }
+    },
+    getGrantName(grant) {
+    	let grantName = '';
+      if('category' in grant) {
+      	grantName = grant.category.ja;
+      }
+      if(grantName == '' && 'system_name' in grant) {
+      	grantName = grant.system_name.ja;
+      }
+      return grantName;
+    },
   },
   computed: {
   }
