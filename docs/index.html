@@ -22,7 +22,8 @@
 <div class="career-chart">
   <h2>出力結果</h2>
   <h3>研究者情報</h3>
-  ${ researcher }
+  ${ researcher }<br>
+  ${ career.firstYear } 〜 ${ career.latestYear }
   <h3>業績 (total: ${career.achievements.total})</h3>
   <h4>ジャーナル・論文誌 (total: ${career.achievements.journal.total})</h4>
     <ul>
@@ -80,6 +81,8 @@ var app = new Vue({
       }
     },
     career: {
+      firstYear: new Date().getFullYear(),
+      latestYear: 0,
       educationsAndJobs: [],
       achievements: {
         journal:      {total: 0},
@@ -120,7 +123,6 @@ var app = new Vue({
           researcher.given_name.en  + " " + researcher.family_name.en,
         ];
       }
-      console.log(this.researcher);
       // Education History
       for(let i=0; i < this.rmJson.education.length; i++) {
         let edu = this.rmJson.education[i];
@@ -134,6 +136,7 @@ var app = new Vue({
           eduName = this.getEduName(edu.department);
         }
         this.career.educationsAndJobs.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': eduName});
+        this.updateCareerPeriod(yearFrom, yearTo);
       }
       // Job History
       for(let i=0; i < this.rmJson.research_experience.length; i++) {
@@ -142,6 +145,7 @@ var app = new Vue({
         let yearTo   = this.getFinancialYear(job.to_date);
         let jobName  = ('job' in job) ? this.getJobName(job) : '';
         this.career.educationsAndJobs.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': jobName});
+        this.updateCareerPeriod(yearFrom, yearTo);
       }
       // Achievement History (paper)
       for(let i=0; i < this.rmJson.published_papers.length; i++) {
@@ -176,6 +180,7 @@ var app = new Vue({
             this.career.achievements[achvmntType][achvmntYear].total++;
             this.career.achievements[achvmntType].total++;
             this.career.achievements.total++;
+            this.updateCareerPeriod(achvmntYear, achvmntYear);
           }
         }
       }
@@ -190,6 +195,7 @@ var app = new Vue({
                       : grant.research_project_owner_role == 'coinvestigator' ? 'coinvestigator'
                       : 'others';
         this.career.grants.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': grantName, 'role': grantRole});
+        this.updateCareerPeriod(yearFrom, yearTo);
       }
     },
     getFinancialYear(targetDate, isFrom) {
@@ -200,6 +206,10 @@ var app = new Vue({
       year  = (dt.length > 0) ? parseInt(dt[0]) : new Date.now().getYear();
       month = (dt.length > 1) ? parseInt(dt[1]) : isFrom ? 4 : 3;
       return {'year': year, 'month': month}
+    },
+    updateCareerPeriod(yearFrom, yearTo) {
+      if(this.career.firstYear  > yearFrom) { this.career.firstYear  = yearFrom; }
+      if(this.career.latestYear < yearTo  ) { this.career.latestYear = yearTo;   }
     },
     getEduName(edu) {
       if     (edu.ja.includes("修士"))       { return '修士課程' }
