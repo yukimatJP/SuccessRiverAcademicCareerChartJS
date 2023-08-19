@@ -32,12 +32,13 @@
 }
 .career-chart-wrap {
   display: block;
-  margin: 20px 60px;
+  margin: 30px 60px 20px;
   width: var(--row-width);
 }
+.researcher-info,
 .achievement-chart,
-.edujob-chart,
 .grant-chart,
+.edujob-chart,
 .year-chart {
   padding: 10px 0;
   position: relative;
@@ -62,54 +63,20 @@
   border: 1px dotted #ddd;
   border-width: 0 0 0 2px;
 }
-.achievement-chart h3 {
-  color: #7a28a3;
+.achievement-chart h3        { color:        #7a28a3; }
+.achievement-chart h3:before { border-color: #d6adea; }
+.grant-chart h3              { color:        #1b6f1b; }
+.grant-chart h3:before       { border-color: #a6d0a6; }
+.edujob-chart h3             { color:        #4668a5; }
+.edujob-chart h3:before      { border-color: #739fee; }
+.researcher-info {
+  margin: 0 0 10px;
+  height: 50px;
 }
-.achievement-chart h3:before {
-  border-color: #d6adea;
-}
-.edujob-chart h3 {
-  color: #4668a5;
-}
-.edujob-chart h3:before {
-  border-color: #739fee;
-}
-.grant-chart h3 {
-  color: #1b6f1b;
-}
-.grant-chart h3:before {
-  border-color: #a6d0a6;
-}
-.edujob-row,
-.grant-row {
-  position: relative;
-  z-index: 1;
-  height: 30px;
-}
-.edujob-cell,
-.grant-cell {
-  position: absolute;
-  z-index: 2;
-  display: flex;
-  height: 25px;
-  padding: 0 0 3px;
+.researcher-info h3 span {
+  display: block;
   font-size: 0.8em;
-  line-height: 1em;
-  border: 1px solid orange;
-  border-width: 0 0 5px;
-  overflow: hidden;
-}
-.edujob-cell.edu-cell { border-color: #739fee; }
-.edujob-cell.job-cell { border-color: #5077bd; }
-.grant-cell.isPI      { border-color: #4ea24e; }
-.grant-cell.isnotPI   { border-color: #a6d0a6; }
-.edujob-cell span,
-.grant-cell span {
-  display: inline-block;
-  margin: 0 auto;
-  align-self: flex-end;
-  text-align: left;
-  white-space: nowrap;
+  font-weight: normal;
 }
 .achievement-row {
   position: relative;
@@ -133,7 +100,38 @@
   align-self: flex-end;
 }
 .achievement-cell.item-first-or-corresp { background: #ad5ad6; }
-.achievement-cell.item-other            { background: #d6adea;     }
+.achievement-cell.item-other            { background: #d6adea; }
+.grant-row,
+.edujob-row {
+  position: relative;
+  z-index: 1;
+  height: 30px;
+}
+.grant-cell,
+.edujob-cell {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  height: 25px;
+  padding: 0 0 3px;
+  font-size: 0.8em;
+  line-height: 1em;
+  border: 1px solid orange;
+  border-width: 0 0 5px;
+  overflow: hidden;
+}
+.grant-cell.isPI      { border-color: #4ea24e; }
+.grant-cell.isnotPI   { border-color: #a6d0a6; }
+.edujob-cell.edu-cell { border-color: #739fee; }
+.edujob-cell.job-cell { border-color: #5077bd; }
+.grant-cell span,
+.edujob-cell span {
+  display: inline-block;
+  margin: 0 auto;
+  align-self: flex-end;
+  text-align: left;
+  white-space: nowrap;
+}
 .year-cell {
   float: left;
   display: block;
@@ -172,6 +170,12 @@
   <h2>キャリアチャート</h2>
   <div class="career-chart" v-if="career.latestYear" @scroll="onScrollChart">
     <div class="career-chart-wrap">
+      <div class="researcher-info">
+        <h3>
+          ${ researcher.name.display }
+          <span>${ researcher.affiliation.display }</span>
+        </h3>
+      </div>
       <div class="achievement-chart">
         <div class="achievement-row"
              v-for="type in achievementTypeList"
@@ -277,6 +281,10 @@ var app = new Vue({
       name: {
         ja: [],
         en: [],
+        display: ''
+      },
+      affiliation: {
+        display: ''
       }
     },
     career: {
@@ -336,6 +344,9 @@ var app = new Vue({
           researcher.family_name.en + " " + researcher.given_name.en,
           researcher.given_name.en  + " " + researcher.family_name.en,
         ];
+        this.researcher.name.display = researcher.family_name.ja + " " + researcher.given_name.ja
+                              + " (" + researcher.given_name.en  + " " + researcher.family_name.en + ")";
+        this.researcher.affiliation.display = researcher.affiliations[0].affiliation.ja;
       }
       // Education History
       for(let i=0; i < this.rmJson.education.length; i++) {
