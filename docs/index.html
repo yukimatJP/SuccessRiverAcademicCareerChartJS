@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <meta charset="utf-8">
-<title>SuccessRiver CareerChart</title>
+<title>SuccessRiver AcademicCareerChart</title>
 <style>
 *,*::before,*::after{box-sizing:border-box}ul[class],ol[class]{padding:0}body,h1,h2,h3,h4,p,ul[class],ol[class],figure,blockquote,dl,dd{margin:0}html{scroll-behavior:smooth}body{min-height:100vh;text-rendering:optimizeSpeed;line-height:1.5}ul[class],ol[class]{list-style:none}a:not([class]){text-decoration-skip-ink:auto}img,picture{max-width:100%;display:block}article>*+*{margin-top:1em}input,button,textarea,select{font:inherit}@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important}}
 * {
@@ -21,13 +21,111 @@
 .app {
   overflow-x: hidden;
 }
-.app > div {
-  margin: 20px;
+.app > header {
+  position: fixed;
+  z-index: 3;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 40px;
+  background: #333;
+}
+.app > header h1 {
+  font-size: 1.2em;
+  line-height: 40px;
+  padding: 0 20px;
+  color: white;
+}
+.app > section h2 {
+  font-size: 1.1em;
+  padding: 0 0 5px;
+}
+section.file-select-container {
+  display: block;
+  margin: 40px 0 0;
+  padding: 20px 30px 30px;
+  background: #ddd;
+}
+section.file-select-container input {
+  display: none;
+}
+section.file-select-container label {
+  display: inline-block;
+  padding: 10px 20px;
+  background: #bbb;
+  cursor: pointer;
+}
+section.file-select-container label:hover {
+  background: #aaa;
+}
+section.file-select-container p.selected-file-name {
+  position: relative;
+  display: inline-block;
+  padding: 10px 200px 10px 20px;
+  background: #bbb;
+  cursor: pointer;
+}
+section.file-select-container p.selected-file-name:hover {
+  opacity: 0.7;
+}
+section.file-select-container p.selected-file-name span {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  padding: 10px 20px;
+  background: #666;
+  color: white;
+}
+section.chart-setting-container {
+  padding: 20px 30px;
+  background: #eee;
+}
+section.chart-setting-container dl dt {
+  float: left;
+  width: 100px;
+  padding: 5px 0;
+  min-height: 30px;
+}
+section.chart-setting-container dl dd {
+  margin: 0 0 0 100px;
+  padding: 5px 0;
+  min-height: 30px;
+}
+section.chart-setting-container dl dd ul {
+  margin: 0;
+  padding: 0;
+}
+section.chart-setting-container dl dd ul li {
+  float: left;
+  list-style: none;
+  margin: 0 20px 0 0;
+}
+section.career-chart-container {
+  padding: 20px 30px 30px;
+}
+.career-chart-empty {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  width: calc(100vw - 60px);
+  height: 200px;
+}
+.career-chart-empty label {
+  display: block;
+  line-height: 200px;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  color: gray;
+  cursor: pointer;
+}
+.career-chart-empty label:hover {
+  background: #eee;
 }
 .career-chart {
   border: 1px solid #ddd;
   border-radius: 5px;
-  width: calc(100vw - 40px);
+  width: calc(100vw - 60px);
   overflow-x: auto;
 }
 .career-chart-wrap {
@@ -149,26 +247,79 @@
   border: 1px solid #ccc;
   border-width: 5px 0 0;
 }
+footer {
+  padding: 20px 30px;
+  background: #eee;
+  color: black;
+}
+footer h2 {
+  font-size: 1em;
+}
+footer a {
+  color: blue;
+}
+footer p {
+  padding: 10px 0 0;
+}
+footer .original-tweet {
+  display: inline-block;
+  padding: 20px 5px;
+}
 </style>
 <div class="app" id="app">
-<h1>SuccessRiver CareerChart</h1>
-<div class="file-upload">
+<header>
+  <h1>SuccessRiver AcademicCareerChart</h1>
+</header>
+<section class="file-select-container">
+  <h2>① researchmapのエクスポートファイルを選択</h2>
   <div v-if="rmFile == null">
-    <h2>researchmapのエクスポートファイルを選択</h2>
+    <label for="researchmap-file-input">ファイルを選択</label>
     <input type="file" id="researchmap-file-input" @change="selectrmFile"></li>
   </div>
   <div v-else>
-    ${ rmFile.name }
-    <span @click="rmFile = null">ファイルを変更する</span>
+    <p class="selected-file-name" @click="rmFile = null">
+      ${ rmFile.name }
+      <span>ファイルを変更する</span>
+    </p>
   </div>
-</div>
-<div class="display-option">
-  <h2>表示オプション</h2>
-  表示横幅： <input type="range" min="30" max="200" v-model="chart.settings.cellWidth" @input="updateCellWidth"> ${ chart.settings.cellWidth }px
-</div>
-<div>
-  <h2>キャリアチャート</h2>
-  <div class="career-chart" v-if="career.latestYear" @scroll="onScrollChart">
+</section>
+<section class="chart-setting-container">
+  <h2>② 表示オプション</h2>
+  <dl class="clearfix">
+    <dt>表示横幅</dt>
+    <dd>
+      <input type="range" min="30" max="200"
+             style="width: 200px"
+             v-model="chart.settings.cellWidth"
+             @input="updateCellWidth">
+      ${ chart.settings.cellWidth }px
+    </dd>
+    <dt>表示項目</dt>
+    <dd>
+      <ul class="clearfix">
+        <li v-for="(item, type) in achievementNameList">
+          <input type="checkbox"
+                 :id="'disp-setting-achievement' + type"
+                 v-model="chart.settings.visibility[type]">
+          <label :for="'disp-setting-achievement' + type">${ item }</label>
+        </li>
+      </ul>
+    </dd>
+    <dd>
+      <ul class="clearfix">
+        <li>
+          <input type="checkbox" id="disp-setting-grants-notPI"
+                 v-model="chart.settings.visibility.notPIgrants"
+                 @change="replotCareerHistory">
+          <label for="disp-setting-grants-notPI">代表研究者以外の予算</label>
+        </li>
+    </dd>
+  </dl>
+</section>
+<section class="career-chart-container">
+  <h2>③ キャリアチャート出力結果</h2>
+  <div class="career-chart-empty" v-if="!chart.latestYear"><label for="researchmap-file-input">ファイルを選択してください</label></div>
+  <div class="career-chart" v-if="chart.latestYear" @scroll="onScrollChart">
     <div class="career-chart-wrap">
       <div class="researcher-info">
         <h3>
@@ -179,6 +330,7 @@
       <div class="achievement-chart">
         <div class="achievement-row"
              v-for="type in achievementTypeList"
+             v-if="chart.settings.visibility[type]"
              :style="{height: (30 + 6 * getAchievementRowHeight(type)) + 'px'}">
           <h3>${ achievementNameList[type] }</h3>
           <div class="achievement-col"
@@ -216,43 +368,24 @@
       </div>
       <div class="year-chart clearfix">
         <span class="year-cell"
-              v-for="i in (career.latestYear - career.firstYear + 1)">${ career.firstYear + i - 1}</span>
+              v-for="i in (chart.latestYear - chart.firstYear + 1)">${ chart.firstYear + i - 1}</span>
         <span class="year-cell now"></span>
       </div>
     </div>
   </div>
-</div>
-<div class="career-data">
-  <h2>キャリアデータ</h2>
-  <h3>研究者情報</h3>
-  ${ researcher }<br>
-  ${ career.firstYear } 〜 ${ career.latestYear }
-  <h3>業績 (total: ${career.achievements.total})</h3>
-  <h4>ジャーナル・論文誌 (total: ${career.achievements.journal.total})</h4>
-    <ul>
-      <li v-for="(item, year) in career.achievements.journal" v-if="year != 'total'">
-        ${year} ... firstCorresp: ${item.firstCorresp}, first: ${item.first}, corresp: ${item.corresp}, other: ${item.other} (total: ${item.total})
-      </li>
-    </ul>
-  <h4>国際会議 (total: ${career.achievements.intlConf.total})</h4>
-    <ul>
-      <li v-for="(item, year) in career.achievements.intlConf" v-if="year != 'total'">
-        ${year} ... firstCorresp: ${item.firstCorresp}, first: ${item.first}, corresp: ${item.corresp}, other: ${item.other} (total: ${item.total})
-      </li>
-    </ul>
-  <h4>国内研究会・シンポジウム (total: ${career.achievements.domesticConf.total})</h4>
-    <ul>
-      <li v-for="(item, year) in career.achievements.domesticConf" v-if="year != 'total'">
-        ${year} ... firstCorresp: ${item.firstCorresp}, first: ${item.first}, corresp: ${item.corresp}, other: ${item.other} (total: ${item.total})
-      </li>
-    </ul>
-  <h3>予算獲得状況</h3>
-  ${ career.grants }
-  <h3>学歴・職歴</h3>
-  ${ career.educationsAndJobs }
-  <h3>rawJson</h3>
-  ${ rmJson }
-</div>
+</section>
+<footer>
+  <h2>◆ このページについて</h2>
+  <p>
+    「SuccessRiver AcademicCareerChart」は、<a href="https://twitter.com/rei_nari">@rei_nari</a>さん考案のキャリアイベント図をresearchmapに登録された情報から生成します。
+  </p>
+  <p>
+    作者情報： 松田裕貴（<a href="https://twitter.com/yukimatJP">@yukimatJP</a>）
+  </p>
+  <div class="original-tweet">
+    <blockquote class="twitter-tweet"><p lang="ja" dir="ltr">キャリア形成について話す機会があった時に、キャリアイベントとライフイベントを並べた図を作成したのだけれど、研究メインのものとして、ライフイベントの代わりに学生指導状況という項目を作りつつ、色々と情報を更新した。こういう年表を作り更新することで、自身の状況を俯瞰的に捉えておきたい <a href="https://t.co/1RDY98i4jj">pic.twitter.com/1RDY98i4jj</a></p>&mdash; サクセスリバーコーテシーinエイトプリンス (@rei_nari) <a href="https://twitter.com/rei_nari/status/1691102017153114112?ref_src=twsrc%5Etfw">August 14, 2023</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+  </div>
+</footer>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js"></script>
 <script>
@@ -288,8 +421,6 @@ var app = new Vue({
       }
     },
     career: {
-      firstYear: new Date().getFullYear(),
-      latestYear: 0,
       educationsAndJobs: [],
       grants: [],
       achievements: {
@@ -300,8 +431,16 @@ var app = new Vue({
       }
     },
     chart: {
+      firstYear: new Date().getFullYear(),
+      latestYear: 0,
       settings: {
         cellWidth: 50,
+        visibility: {
+          journal:      true,
+          intlConf:     true,
+          domesticConf: true,
+          notPIgrants:  true,
+        }
       },
       educationsAndJobs: [],
       grants: [],
@@ -433,8 +572,8 @@ var app = new Vue({
       return {'year': year, 'month': month}
     },
     updateCareerPeriod(yearFrom, yearTo) {
-      if(this.career.firstYear  > yearFrom) { this.career.firstYear  = yearFrom; }
-      if(this.career.latestYear < yearTo  ) { this.career.latestYear = Math.min(new Date().getFullYear(), yearTo);   }
+      if(this.chart.firstYear  > yearFrom) { this.chart.firstYear  = yearFrom; }
+      if(this.chart.latestYear < yearTo  ) { this.chart.latestYear = Math.min(new Date().getFullYear(), yearTo);   }
     },
     getEduName(edu) {
       if     (edu.ja.includes("修士"))       { return '修士課程' }
@@ -497,19 +636,21 @@ var app = new Vue({
       // Grant History
       for(let i=0; i<this.career.grants.length; i++) {
         let newItem = this.getGrantItem(this.career.grants[i]);
-        if(this.chart.grants.length == 0) {
-          this.chart.grants.push([newItem]);
-        } else {
-          for(let j=0; j<this.chart.grants.length; j++) {
-            if(this.chart.grants[j][0].from > newItem.to) {
-              this.chart.grants[j].unshift(newItem);
-              break;
-            } else if(this.chart.grants[j][this.chart.grants[j].length-1].to < newItem.from) {
-              this.chart.grants[j].push(newItem);
-              break;
-            } else if(j == this.chart.grants.length - 1) {
-              this.chart.grants.push([newItem]);
-              break;
+        if(this.chart.settings.visibility.notPIgrants || newItem.isPI) {
+          if(this.chart.grants.length == 0) {
+            this.chart.grants.push([newItem]);
+          } else {
+            for(let j=0; j<this.chart.grants.length; j++) {
+              if(this.chart.grants[j][0].from > newItem.to) {
+                this.chart.grants[j].unshift(newItem);
+                break;
+              } else if(this.chart.grants[j][this.chart.grants[j].length-1].to < newItem.from) {
+                this.chart.grants[j].push(newItem);
+                break;
+              } else if(j == this.chart.grants.length - 1) {
+                this.chart.grants.push([newItem]);
+                break;
+              }
             }
           }
         }
@@ -517,7 +658,7 @@ var app = new Vue({
       // Achievement History (paper)
       for(let achvmntType of this.achievementTypeList) {
         this.chart.achievements[achvmntType] = {};
-        for(let i=this.career.firstYear; i<=this.career.latestYear; i++) {
+        for(let i=this.chart.firstYear; i<=this.chart.latestYear; i++) {
           let year = String(i);
           if(year in this.career.achievements[achvmntType]) {
             let achvmnt = this.career.achievements[achvmntType][year];
@@ -528,6 +669,17 @@ var app = new Vue({
           }
         }
       }
+    },
+    replotCareerHistory() {
+      // reset plot data
+      this.chart.educationsAndJobs = [];
+      this.chart.grants = [];
+      this.achievements = {
+              journal:      [],
+              intlConf:     [],
+              domesticConf: [],
+            };
+      this.plotCareerHistory();
     },
     getEducationAndJobItem(item) {
       return {
@@ -548,7 +700,7 @@ var app = new Vue({
     updateCellWidth() {
       let root = document.documentElement;
       root.style.setProperty('--col-width', this.chart.settings.cellWidth + "px");
-      root.style.setProperty('--row-width', this.chart.settings.cellWidth * (4 + this.career.latestYear - this.career.firstYear) + "px");
+      root.style.setProperty('--row-width', this.chart.settings.cellWidth * (4 + this.chart.latestYear - this.chart.firstYear) + "px");
     },
     onScrollChart(e) {
       let root = document.documentElement;
@@ -564,7 +716,7 @@ var app = new Vue({
     getStackCellStyle(item) {
       return {
         width: (this.chart.settings.cellWidth * (item.to - item.from)) + 'px',
-        left: (this.chart.settings.cellWidth * (item.from - this.career.firstYear)) + 'px'
+        left: (this.chart.settings.cellWidth * (item.from - this.chart.firstYear)) + 'px'
       };
     }
   },
