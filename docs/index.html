@@ -21,25 +21,39 @@
   border: 1px solid #ddd;
   border-radius: 5px;
 }
-.edujob-row {
-  position: relative;
-  height: 50px;
+.edujob-chart,
+.grant-chart,
+.year-chart {
+  padding: 10px 0;
 }
-.edujob-cell {
+.edujob-row,
+.grant-row {
+  position: relative;
+  height: 30px;
+}
+.edujob-cell,
+.grant-cell {
   position: absolute;
   display: flex;
-  height: 40px;
-  padding: 0 0 5px;
-  text-align: center;
+  height: 25px;
+  padding: 0 0 3px;
   font-size: 0.8em;
   line-height: 1em;
   border: 1px solid orange;
   border-width: 0 0 5px;
+  overflow: hidden;
 }
-.edujob-cell span {
-  display: block;
-  width: 100%;
+.edujob-cell.edu-cell { border-color: orange; }
+.edujob-cell.job-cell { border-color: orangered; }
+.grant-cell.isPI    { border-color: forestgreen; }
+.grant-cell.isnotPI { border-color: lightgreen; }
+.edujob-cell span,
+.grant-cell span {
+  display: inline-block;
+  margin: 0 auto;
   align-self: flex-end;
+  text-align: left;
+  white-space: nowrap;
 }
 .year-cell {
   float: left;
@@ -72,11 +86,23 @@
 <div>
   <h2>キャリアチャート</h2>
   <div class="career-chart" v-if="career.latestYear">
+    <div class="grant-chart">
+      <div class="grant-row"
+           v-for="(row, i) in chart.grants.slice().reverse()">
+        <span class="grant-cell"
+              v-for="(item, j) in row"
+              :class="{'isPI': item.isPI, 'isnotPI': !item.isPI}"
+              :style="{width: (50 * (item.to - item.from)) + 'px', left: (50 * (item.from - career.firstYear)) + 'px'}">
+          <span v-html="item.name"></span>
+        </span>
+      </div>
+    </div>
     <div class="edujob-chart">
       <div class="edujob-row"
            v-for="(row, i) in chart.educationsAndJobs.slice().reverse()">
         <span class="edujob-cell"
               v-for="(item, j) in row"
+              :class="{'edu-cell': item.isEdu, 'job-cell': !item.isEdu}"
               :style="{width: (50 * (item.to - item.from)) + 'px', left: (50 * (item.from - career.firstYear)) + 'px'}">
           <span v-html="item.name"></span>
         </span>
@@ -214,7 +240,7 @@ var app = new Vue({
         if(eduName == '' && 'department' in edu) {
           eduName = this.getEduName(edu.department);
         }
-        this.career.educationsAndJobs.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': eduName});
+        this.career.educationsAndJobs.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': eduName, 'isEdu': true});
         this.updateCareerPeriod(yearFrom.year, yearTo.year);
       }
       // Job History
@@ -223,7 +249,7 @@ var app = new Vue({
         let yearFrom = this.getFinancialYear(job.from_date);
         let yearTo   = this.getFinancialYear(job.to_date);
         let jobName  = ('job' in job) ? this.getJobName(job) : '';
-        this.career.educationsAndJobs.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': jobName});
+        this.career.educationsAndJobs.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': jobName, 'isEdu': false});
         this.updateCareerPeriod(yearFrom.year, yearTo.year);
       }
       // Achievement History (paper)
@@ -302,8 +328,7 @@ var app = new Vue({
     },
     getJobName(job) {
       if('affiliation' in job) {
-        // jobNameLength = job.affiliation.ja.length + job.job.ja.length;
-        jobName = job.affiliation.ja + "<br>" + job.job.ja;
+        jobName = job.affiliation.ja + "・" + job.job.ja;
       } else {
         jobName = job.job.ja;
       }
@@ -329,13 +354,11 @@ var app = new Vue({
     plotCareerHistory() {
       // Education and Job History
       for(let i=0; i<this.career.educationsAndJobs.length; i++) {
-        let newItem = this.getEducationsAndJobsHistoryItem(this.career.educationsAndJobs[i]);
-        console.log(i, newItem);
+        let newItem = this.getEducationAndJobItem(this.career.educationsAndJobs[i]);
         if(this.chart.educationsAndJobs.length == 0) {
           this.chart.educationsAndJobs.push([newItem]);
         } else {
           for(let j=0; j<this.chart.educationsAndJobs.length; j++) {
-            console.log(i, j, );
             if(this.chart.educationsAndJobs[j][0].from > newItem.to) {
               this.chart.educationsAndJobs[j].unshift(newItem);
               break;
@@ -348,17 +371,44 @@ var app = new Vue({
             }
           }
         }
-        console.log(JSON.stringify(this.chart.educationsAndJobs));
       }
-      // console.log(this.chart.educationsAndJobs);
+      // Grant History
+      for(let i=0; i<this.career.grants.length; i++) {
+        let newItem = this.getGrantItem(this.career.grants[i]);
+        if(this.chart.grants.length == 0) {
+          this.chart.grants.push([newItem]);
+        } else {
+          for(let j=0; j<this.chart.grants.length; j++) {
+            if(this.chart.grants[j][0].from > newItem.to) {
+              this.chart.grants[j].unshift(newItem);
+              break;
+            } else if(this.chart.grants[j][this.chart.grants[j].length-1].to < newItem.from) {
+              this.chart.grants[j].push(newItem);
+              break;
+            } else if(j == this.chart.grants.length - 1) {
+              this.chart.grants.push([newItem]);
+              break;
+            }
+          }
+        }
+      }
     },
-    getEducationsAndJobsHistoryItem(eaj) {
+    getEducationAndJobItem(item) {
       return {
-        from: parseFloat((eaj.yearFrom.year + eaj.yearFrom.month / 12.0).toFixed(2)),
-        to:   parseFloat((eaj.yearTo.year   + eaj.yearTo.month   / 12.0).toFixed(2)),
-        name: eaj.name
+        from:  parseFloat((item.yearFrom.year + item.yearFrom.month / 12.0).toFixed(2)),
+        to:    parseFloat((item.yearTo.year   + item.yearTo.month   / 12.0).toFixed(2)),
+        name:  item.name,
+        isEdu: item.isEdu,
       };
-    }
+    },
+    getGrantItem(item) {
+      return {
+        from: parseFloat((item.yearFrom.year + item.yearFrom.month / 12.0).toFixed(2)),
+        to:   parseFloat((item.yearTo.year   + item.yearTo.month   / 12.0).toFixed(2)),
+        name: item.name,
+        isPI: item.role == 'principal',
+      };
+    },
   },
   computed: {
   }
