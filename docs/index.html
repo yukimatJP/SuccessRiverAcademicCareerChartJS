@@ -251,6 +251,7 @@ footer {
   padding: 20px 30px;
   background: #eee;
   color: black;
+  word-break: break-all;
 }
 footer h2 {
   font-size: 1em;
@@ -259,11 +260,25 @@ footer a {
   color: blue;
 }
 footer p {
-  padding: 10px 0 0;
+  padding: 10px 20px 0;
+}
+footer p + h2 {
+  margin: 30px 0 0;
+}
+footer .release-note {
+  margin: 10px 20px;
+}
+footer .release-note li {
+  list-style: circle;
+  margin: 5px 20px;
 }
 footer .original-tweet {
-  display: inline-block;
-  padding: 20px 5px;
+  float: right;
+  padding: 5px;
+  margin: 0 0 0 30px;
+}
+footer .content {
+  margin: 25px 0;
 }
 </style>
 <div class="app" id="app">
@@ -374,16 +389,28 @@ footer .original-tweet {
     </div>
   </div>
 </section>
-<footer>
-  <h2>◆ このページについて</h2>
-  <p>
-    「SuccessRiver AcademicCareerChart」は、<a href="https://twitter.com/rei_nari">@rei_nari</a>さん考案のキャリアイベント図をresearchmapに登録された情報から生成します。
-  </p>
-  <p>
-    作者情報： 松田裕貴（<a href="https://twitter.com/yukimatJP">@yukimatJP</a>）
-  </p>
+<footer class="clearfix">
   <div class="original-tweet">
     <blockquote class="twitter-tweet"><p lang="ja" dir="ltr">キャリア形成について話す機会があった時に、キャリアイベントとライフイベントを並べた図を作成したのだけれど、研究メインのものとして、ライフイベントの代わりに学生指導状況という項目を作りつつ、色々と情報を更新した。こういう年表を作り更新することで、自身の状況を俯瞰的に捉えておきたい <a href="https://t.co/1RDY98i4jj">pic.twitter.com/1RDY98i4jj</a></p>&mdash; サクセスリバーコーテシーinエイトプリンス (@rei_nari) <a href="https://twitter.com/rei_nari/status/1691102017153114112?ref_src=twsrc%5Etfw">August 14, 2023</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+  </div>
+  <div class="content">
+    <h2>◆ このページについて</h2>
+    <p>
+      「SuccessRiver AcademicCareerChart」は、<a href="https://twitter.com/rei_nari">@rei_nari</a>さん考案のキャリアイベント図をresearchmapに登録された情報から生成します。
+    </p>
+    <p>
+      Githubリポジトリ： <a href="https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS">https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS</a>
+    </p>
+    <p>
+      作者情報： 松田裕貴（<a href="https://twitter.com/yukimatJP">@yukimatJP</a>）
+    </p>
+    <h2>◇ リリースノート</h2>
+    <ul class="release-note">
+      <li>
+        2023/08/19（システム公開）<br>
+        本システムは週末ひとりハッカソンの成果のため、対応していない部分が多々あります（そもそも、自分のresearchmapの使い方が間違えてる部分もありそう）。予算や学歴・職歴のラベルに関してはもう少しいい感じにしたいところです。
+      </li>
+    </ul>
   </div>
 </footer>
 </div>
