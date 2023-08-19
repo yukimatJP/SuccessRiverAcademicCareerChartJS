@@ -11,6 +11,7 @@
 :root {
   --col-width: 50px;
   --row-width: 50px;
+  --chart-header-position: 0px;
 }
 .clearfix::after {
    content: "";
@@ -31,7 +32,7 @@
 }
 .career-chart-wrap {
   display: block;
-  margin: 20px 30px;
+  margin: 20px 60px;
   width: var(--row-width);
 }
 .achievement-chart,
@@ -39,15 +40,56 @@
 .grant-chart,
 .year-chart {
   padding: 10px 0;
+  position: relative;
+}
+.career-chart h3 {
+  display: block;
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  left: calc(var(--chart-header-position) - 10px);
+  width: 300px;
+  height: calc(100% - 10px);
+  font-size: 1em;
+}
+.career-chart h3:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -15px;
+  height: 100%;
+  width: 2px;
+  border: 1px dotted #ddd;
+  border-width: 0 0 0 2px;
+}
+.achievement-chart h3 {
+  color: #7a28a3;
+}
+.achievement-chart h3:before {
+  border-color: #d6adea;
+}
+.edujob-chart h3 {
+  color: #4668a5;
+}
+.edujob-chart h3:before {
+  border-color: #739fee;
+}
+.grant-chart h3 {
+  color: #1b6f1b;
+}
+.grant-chart h3:before {
+  border-color: #a6d0a6;
 }
 .edujob-row,
 .grant-row {
   position: relative;
+  z-index: 1;
   height: 30px;
 }
 .edujob-cell,
 .grant-cell {
   position: absolute;
+  z-index: 2;
   display: flex;
   height: 25px;
   padding: 0 0 3px;
@@ -57,10 +99,10 @@
   border-width: 0 0 5px;
   overflow: hidden;
 }
-.edujob-cell.edu-cell { border-color: orange;      }
-.edujob-cell.job-cell { border-color: orangered;   }
-.grant-cell.isPI      { border-color: forestgreen; }
-.grant-cell.isnotPI   { border-color: lightgreen;  }
+.edujob-cell.edu-cell { border-color: #739fee; }
+.edujob-cell.job-cell { border-color: #5077bd; }
+.grant-cell.isPI      { border-color: #4ea24e; }
+.grant-cell.isnotPI   { border-color: #a6d0a6; }
 .edujob-cell span,
 .grant-cell span {
   display: inline-block;
@@ -70,14 +112,18 @@
   white-space: nowrap;
 }
 .achievement-row {
+  position: relative;
+  z-index: 1;
   height: 100px;
+  min-height: 50px;
+  padding: 20px 0 0;
 }
 .achievement-col {
   float: left;
   display: flex;
   flex-direction: column-reverse;
   width: calc(var(--col-width) - 4px);
-  height: 100px;
+  height: 100%;
   margin: 0 4px 0 0;
 }
 .achievement-cell {
@@ -86,8 +132,8 @@
   margin: 1px 0 0;
   align-self: flex-end;
 }
-.achievement-cell.item-first-or-corresp { background: blueviolet; }
-.achievement-cell.item-other            { background: violet;     }
+.achievement-cell.item-first-or-corresp { background: #ad5ad6; }
+.achievement-cell.item-other            { background: #d6adea;     }
 .year-cell {
   float: left;
   display: block;
@@ -97,12 +143,12 @@
   font-size: 0.8em;
   line-height: 1em;
   text-align: center;
-  border: 1px solid gray;
+  border: 1px solid #999;
   border-width: 5px 0 0;
 }
 .year-cell.now {
   width: calc(var(--col-width) * 2);
-  border: 1px solid #ddd;
+  border: 1px solid #ccc;
   border-width: 5px 0 0;
 }
 </style>
@@ -120,16 +166,19 @@
 </div>
 <div class="display-option">
   <h2>表示オプション</h2>
-  表示横幅： <input type="range" v-model="chart.settings.cellWidth" @input="updateCellWidth">
+  表示横幅： <input type="range" min="30" max="200" v-model="chart.settings.cellWidth" @input="updateCellWidth"> ${ chart.settings.cellWidth }px
 </div>
 <div>
   <h2>キャリアチャート</h2>
-  <div class="career-chart" v-if="career.latestYear">
+  <div class="career-chart" v-if="career.latestYear" @scroll="onScrollChart">
     <div class="career-chart-wrap">
       <div class="achievement-chart">
-        <div class="achievement-row">
+        <div class="achievement-row"
+             v-for="type in achievementTypeList"
+             :style="{height: (30 + 6 * getAchievementRowHeight(type)) + 'px'}">
+          <h3>${ achievementNameList[type] }</h3>
           <div class="achievement-col"
-               v-for="(col, i) in chart.achievements.journal">
+               v-for="(col, i) in chart.achievements[type]">
             <span class="achievement-cell"></span>
             <span class="achievement-cell"
                   v-for="item in col"
@@ -138,6 +187,7 @@
         </div>
       </div>
       <div class="grant-chart">
+        <h3>予算獲得状況</h3>
         <div class="grant-row"
              v-for="(row, i) in chart.grants.slice().reverse()">
           <span class="grant-cell"
@@ -149,6 +199,7 @@
         </div>
       </div>
       <div class="edujob-chart">
+        <h3>学歴・職歴</h3>
         <div class="edujob-row"
              v-for="(row, i) in chart.educationsAndJobs.slice().reverse()">
           <span class="edujob-cell"
@@ -251,7 +302,9 @@ var app = new Vue({
         intlConf:     [],
         domesticConf: [],
       },
-    }
+    },
+    achievementTypeList: ['journal', 'intlConf', 'domesticConf'],
+    achievementNameList: {'journal': '論文誌・ジャーナル', 'intlConf': '国際会議プロシーディングス', 'domesticConf': '国内研究会・シンポジウム'},
   },
   created: function() {
   },
@@ -451,8 +504,7 @@ var app = new Vue({
         }
       }
       // Achievement History (paper)
-      achievementTypeList = ['journal', 'intlConf', 'domesticConf'];
-      for(let achvmntType of achievementTypeList) {
+      for(let achvmntType of this.achievementTypeList) {
         this.chart.achievements[achvmntType] = {};
         for(let i=this.career.firstYear; i<=this.career.latestYear; i++) {
           let year = String(i);
@@ -486,6 +538,17 @@ var app = new Vue({
       let root = document.documentElement;
       root.style.setProperty('--col-width', this.chart.settings.cellWidth + "px");
       root.style.setProperty('--row-width', this.chart.settings.cellWidth * (4 + this.career.latestYear - this.career.firstYear) + "px");
+    },
+    onScrollChart(e) {
+      let root = document.documentElement;
+      root.style.setProperty('--chart-header-position', e.target.scrollLeft + "px");
+    },
+    getAchievementRowHeight(type) {
+      let maxLength = 0;
+      for([year, achvmnt] of Object.entries(this.chart.achievements[type])) {
+        maxLength = Math.max(maxLength, achvmnt.length);
+      }
+      return maxLength;
     },
     getStackCellStyle(item) {
       return {
