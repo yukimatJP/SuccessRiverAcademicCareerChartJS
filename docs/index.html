@@ -21,17 +21,31 @@
 </div>
 <div class="career-chart">
   <h2>出力結果</h2>
-  <h3>学歴・職歴</h3>
-  ${ career.educationsAndJobs }
+  <h3>研究者情報</h3>
+  ${ researcher }
+  <h3>業績 (total: ${career.achievements.total})</h3>
+  <h4>ジャーナル・論文誌 (total: ${career.achievements.journal.total})</h4>
+    <ul>
+      <li v-for="(item, year) in career.achievements.journal" v-if="year != 'total'">
+        ${year} ... firstCorresp: ${item.firstCorresp}, first: ${item.first}, corresp: ${item.corresp}, other: ${item.other} (total: ${item.total})
+      </li>
+    </ul>
+  <h4>国際会議 (total: ${career.achievements.intlConf.total})</h4>
+    <ul>
+      <li v-for="(item, year) in career.achievements.intlConf" v-if="year != 'total'">
+        ${year} ... firstCorresp: ${item.firstCorresp}, first: ${item.first}, corresp: ${item.corresp}, other: ${item.other} (total: ${item.total})
+      </li>
+    </ul>
+  <h4>国内研究会・シンポジウム (total: ${career.achievements.domesticConf.total})</h4>
+    <ul>
+      <li v-for="(item, year) in career.achievements.domesticConf" v-if="year != 'total'">
+        ${year} ... firstCorresp: ${item.firstCorresp}, first: ${item.first}, corresp: ${item.corresp}, other: ${item.other} (total: ${item.total})
+      </li>
+    </ul>
   <h3>予算獲得状況</h3>
   ${ career.grants }
-  <h3>業績</h3>
-  <h4>ジャーナル・論文誌</h4>
-  ${ career.achievements.journal }
-  <h4>国際会議</h4>
-  ${ career.achievements.intlConf }
-  <h4>国内研究会・シンポジウム</h4>
-  ${ career.achievements.domesticConf }
+  <h3>学歴・職歴</h3>
+  ${ career.educationsAndJobs }
   <h3>rawJson</h3>
   ${ rmJson }
 </div>
@@ -59,12 +73,19 @@ var app = new Vue({
   data: {
     rmFile: null,
     rmJson: null,
+    researcher: {
+      name: {
+        ja: [],
+        en: [],
+      }
+    },
     career: {
       educationsAndJobs: [],
       achievements: {
-      	journal:      {},
-      	intlConf:     {},
-      	domesticConf: {},
+        journal:      {total: 0},
+        intlConf:     {total: 0},
+        domesticConf: {total: 0},
+        total: 0,
       },
       grants: []
     }
@@ -87,17 +108,30 @@ var app = new Vue({
       };
     },
     visualizeCareer() {
-    	// Education History
+      // Basic Info
+      if('researchers' in this.rmJson) {
+        let researcher = this.rmJson.researchers[0];
+        this.researcher.name.ja = [
+          researcher.family_name.ja + " " + researcher.given_name.ja,
+          researcher.family_name.ja +       researcher.given_name.ja,
+        ];
+        this.researcher.name.en = [
+          researcher.family_name.en + " " + researcher.given_name.en,
+          researcher.given_name.en  + " " + researcher.family_name.en,
+        ];
+      }
+      console.log(this.researcher);
+      // Education History
       for(let i=0; i < this.rmJson.education.length; i++) {
         let edu = this.rmJson.education[i];
         let yearFrom = this.getFinancialYear(edu.from_date);
         let yearTo   = this.getFinancialYear(edu.to_date);
         let eduName  = '';
         if('course' in edu) {
-        	eduName = this.getEduName(edu.course);
+          eduName = this.getEduName(edu.course);
         }
         if(eduName == '' && 'department' in edu) {
-        	eduName = this.getEduName(edu.department);
+          eduName = this.getEduName(edu.department);
         }
         this.career.educationsAndJobs.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': eduName});
       }
@@ -111,39 +145,51 @@ var app = new Vue({
       }
       // Achievement History (paper)
       for(let i=0; i < this.rmJson.published_papers.length; i++) {
-      	let achvmnt = this.rmJson.published_papers[i];
-		    if ('published_paper_type' in achvmnt) {
-		    	let achvmntType = achvmnt.published_paper_type == 'scientific_journal' ? 'journal'
-		    									: achvmnt.published_paper_type == 'international_conference_proceedings' ? 'intlConf'
-		    									: achvmnt.published_paper_type == 'symposium' ? 'domesticConf'
-		    									: '';
-		    	if(achvmntType != '') {
-				    if('published_paper_owner_roles' in achvmnt) {
-				    	firstAuthorFlag = achvmnt.published_paper_owner_roles.includes('lead');
-			        correspAuthorFlag = achvmnt.published_paper_owner_roles.includes('corresponding');
-				    } else {
-			        firstAuthorFlag = 0;
-			        correspAuthorFlag = 0;
-				    }
-				    achvmntYear = this.getFinancialYear(achvmnt.publication_date).year;
-				    if(!(achvmntYear in this.career.achievements[achvmntType])) {
-				    	this.career.achievements[achvmntType][achvmntYear] = [];
-				    }
-			    	this.career.achievements[achvmntType][achvmntYear].push(parseInt(firstAuthorFlag|correspAuthorFlag));
-		    	}
-		    }
+        let achvmnt = this.rmJson.published_papers[i];
+        if ('published_paper_type' in achvmnt) {
+          let achvmntType = achvmnt.published_paper_type == 'scientific_journal' ? 'journal'
+                          : achvmnt.published_paper_type == 'international_conference_proceedings' ? 'intlConf'
+                          : achvmnt.published_paper_type == 'symposium' ? 'domesticConf'
+                          : '';
+          if(achvmntType != '') {
+            let firstAuthorFlag = false;
+            let correspAuthorFlag = false;
+            if('published_paper_owner_roles' in achvmnt) {
+              firstAuthorFlag = achvmnt.published_paper_owner_roles.includes('lead');
+              correspAuthorFlag = achvmnt.published_paper_owner_roles.includes('corresponding');
+            }
+            if(!firstAuthorFlag && 'en' in achvmnt.authors) {
+              firstAuthorFlag = this.researcher.name.en.includes(achvmnt.authors.en[0].name);
+            }
+            if(!firstAuthorFlag && 'ja' in achvmnt.authors) {
+              firstAuthorFlag = this.researcher.name.ja.includes(achvmnt.authors.ja[0].name);
+            }
+            achvmntYear = this.getFinancialYear(achvmnt.publication_date).year;
+            if(!(achvmntYear in this.career.achievements[achvmntType])) {
+              this.career.achievements[achvmntType][achvmntYear] = {'firstCorresp': 0, 'first': 0, 'corresp': 0, 'other': 0, 'total': 0};
+            }
+            let roleKey = (firstAuthorFlag && correspAuthorFlag) ? 'firstCorresp'
+                        : firstAuthorFlag ? 'first'
+                        : correspAuthorFlag ? 'corresp'
+                        : 'other'
+            this.career.achievements[achvmntType][achvmntYear][roleKey]++;
+            this.career.achievements[achvmntType][achvmntYear].total++;
+            this.career.achievements[achvmntType].total++;
+            this.career.achievements.total++;
+          }
+        }
       }
       // Grant History
       for(let i=0; i < this.rmJson.research_projects.length; i++) {
-      	let grant = this.rmJson.research_projects[i];
+        let grant = this.rmJson.research_projects[i];
         let yearFrom  = this.getFinancialYear(grant.from_date);
         let yearTo    = this.getFinancialYear(grant.to_date);
         let grantName = this.getGrantName(grant);
         let grantRole = !('research_project_owner_role' in grant) ? 'undefined'
-        							: grant.research_project_owner_role == 'principal_investigator' ? 'principal'
-        							: grant.research_project_owner_role == 'coinvestigator' ? 'coinvestigator'
-        							: 'others';
-	    	this.career.grants.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': grantName, 'role': grantRole});
+                      : grant.research_project_owner_role == 'principal_investigator' ? 'principal'
+                      : grant.research_project_owner_role == 'coinvestigator' ? 'coinvestigator'
+                      : 'others';
+        this.career.grants.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': grantName, 'role': grantRole});
       }
     },
     getFinancialYear(targetDate, isFrom) {
@@ -172,22 +218,22 @@ var app = new Vue({
       } else {
         jobName = job.job.ja;
       }
-	    if(jobName.includes("日本学術振興会")) {
+      if(jobName.includes("日本学術振興会")) {
         jobName = jobName.includes("DC1") ? "学振DC1"
-        				: jobName.includes("DC2") ? "学振DC2"
-        				: jobName.includes("RPD") ? "学振RPD"
-        				: jobName.includes("SPD") ? "学振SPD"
-        				: jobName.includes("PD")  ? "学振PD"  : 'その他';
-	    }
-    	return jobName;
+                : jobName.includes("DC2") ? "学振DC2"
+                : jobName.includes("RPD") ? "学振RPD"
+                : jobName.includes("SPD") ? "学振SPD"
+                : jobName.includes("PD")  ? "学振PD"  : 'その他';
+      }
+      return jobName;
     },
     getGrantName(grant) {
-    	let grantName = '';
+      let grantName = '';
       if('category' in grant) {
-      	grantName = grant.category.ja;
+        grantName = grant.category.ja;
       }
       if(grantName == '' && 'system_name' in grant) {
-      	grantName = grant.system_name.ja;
+        grantName = grant.system_name.ja;
       }
       return grantName;
     },
