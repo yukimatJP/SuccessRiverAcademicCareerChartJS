@@ -10,19 +10,29 @@
 }
 :root {
   --col-width: 50px;
+  --row-width: 50px;
 }
 .clearfix::after {
    content: "";
    display: block;
    clear: both;
 }
+.app {
+  overflow-x: hidden;
+}
 .app > div {
   margin: 20px;
 }
 .career-chart {
-  padding: 20px;
   border: 1px solid #ddd;
   border-radius: 5px;
+  width: calc(100vw - 40px);
+  overflow-x: auto;
+}
+.career-chart-wrap {
+  display: block;
+  margin: 20px 30px;
+  width: var(--row-width);
 }
 .achievement-chart,
 .edujob-chart,
@@ -91,7 +101,7 @@
   border-width: 5px 0 0;
 }
 .year-cell.now {
-  width: 100px;
+  width: calc(var(--col-width) * 2);
   border: 1px solid #ddd;
   border-width: 5px 0 0;
 }
@@ -110,47 +120,50 @@
 </div>
 <div class="display-option">
   <h2>表示オプション</h2>
+  表示横幅： <input type="range" v-model="chart.settings.cellWidth" @input="updateCellWidth">
 </div>
 <div>
   <h2>キャリアチャート</h2>
   <div class="career-chart" v-if="career.latestYear">
-    <div class="achievement-chart">
-      <div class="achievement-row">
-        <div class="achievement-col"
-             v-for="(col, i) in chart.achievements.journal">
-          <span class="achievement-cell"></span>
-          <span class="achievement-cell"
-                v-for="item in col"
-                :class="{'item-first-or-corresp': item == 1, 'item-other': item == 0}"></span>
+    <div class="career-chart-wrap">
+      <div class="achievement-chart">
+        <div class="achievement-row">
+          <div class="achievement-col"
+               v-for="(col, i) in chart.achievements.journal">
+            <span class="achievement-cell"></span>
+            <span class="achievement-cell"
+                  v-for="item in col"
+                  :class="{'item-first-or-corresp': item == 1, 'item-other': item == 0}"></span>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="grant-chart">
-      <div class="grant-row"
-           v-for="(row, i) in chart.grants.slice().reverse()">
-        <span class="grant-cell"
-              v-for="(item, j) in row"
-              :class="{'isPI': item.isPI, 'isnotPI': !item.isPI}"
-              :style="getStackCellStyle(item)">
-          <span v-html="item.name"></span>
-        </span>
+      <div class="grant-chart">
+        <div class="grant-row"
+             v-for="(row, i) in chart.grants.slice().reverse()">
+          <span class="grant-cell"
+                v-for="(item, j) in row"
+                :class="{'isPI': item.isPI, 'isnotPI': !item.isPI}"
+                :style="getStackCellStyle(item)">
+            <span v-html="item.name"></span>
+          </span>
+        </div>
       </div>
-    </div>
-    <div class="edujob-chart">
-      <div class="edujob-row"
-           v-for="(row, i) in chart.educationsAndJobs.slice().reverse()">
-        <span class="edujob-cell"
-              v-for="(item, j) in row"
-              :class="{'edu-cell': item.isEdu, 'job-cell': !item.isEdu}"
-              :style="getStackCellStyle(item)">
-          <span v-html="item.name"></span>
-        </span>
+      <div class="edujob-chart">
+        <div class="edujob-row"
+             v-for="(row, i) in chart.educationsAndJobs.slice().reverse()">
+          <span class="edujob-cell"
+                v-for="(item, j) in row"
+                :class="{'edu-cell': item.isEdu, 'job-cell': !item.isEdu}"
+                :style="getStackCellStyle(item)">
+            <span v-html="item.name"></span>
+          </span>
+        </div>
       </div>
-    </div>
-    <div class="year-chart clearfix">
-      <span class="year-cell"
-            v-for="i in (career.latestYear - career.firstYear + 1)">${ career.firstYear + i - 1}</span>
-      <span class="year-cell now"></span>
+      <div class="year-chart clearfix">
+        <span class="year-cell"
+              v-for="i in (career.latestYear - career.firstYear + 1)">${ career.firstYear + i - 1}</span>
+        <span class="year-cell now"></span>
+      </div>
     </div>
   </div>
 </div>
@@ -228,7 +241,7 @@ var app = new Vue({
       }
     },
     chart: {
-      setting: {
+      settings: {
         cellWidth: 50,
       },
       educationsAndJobs: [],
@@ -396,7 +409,7 @@ var app = new Vue({
     },
     plotCareerHistory() {
       // set CSS property
-      document.documentElement.style.setProperty('--col-width', this.chart.setting.cellWidth + "px");
+      this.updateCellWidth();
       // Education and Job History
       for(let i=0; i<this.career.educationsAndJobs.length; i++) {
         let newItem = this.getEducationAndJobItem(this.career.educationsAndJobs[i]);
@@ -469,10 +482,15 @@ var app = new Vue({
         isPI: item.role == 'principal',
       };
     },
+    updateCellWidth() {
+      let root = document.documentElement;
+      root.style.setProperty('--col-width', this.chart.settings.cellWidth + "px");
+      root.style.setProperty('--row-width', this.chart.settings.cellWidth * (4 + this.career.latestYear - this.career.firstYear) + "px");
+    },
     getStackCellStyle(item) {
       return {
-        width: (this.chart.setting.cellWidth * (item.to - item.from)) + 'px',
-        left: (this.chart.setting.cellWidth * (item.from - this.career.firstYear)) + 'px'
+        width: (this.chart.settings.cellWidth * (item.to - item.from)) + 'px',
+        left: (this.chart.settings.cellWidth * (item.from - this.career.firstYear)) + 'px'
       };
     }
   },
