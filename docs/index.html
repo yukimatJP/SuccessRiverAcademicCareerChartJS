@@ -52,7 +52,8 @@ section.file-select-container input {
 section.file-select-container label {
   display: inline-block;
   padding: 10px 20px;
-  background: #bbb;
+  background: #bbb;  
+  border-radius: 5px;
   cursor: pointer;
 }
 section.file-select-container label:hover {
@@ -63,6 +64,7 @@ section.file-select-container p.selected-file-name {
   display: inline-block;
   padding: 10px 200px 10px 20px;
   background: #bbb;
+  border-radius: 5px;
   cursor: pointer;
 }
 section.file-select-container p.selected-file-name:hover {
@@ -75,6 +77,7 @@ section.file-select-container p.selected-file-name span {
   height: 100%;
   padding: 10px 20px;
   background: #666;
+  border-radius: 0 5px 5px 0;
   color: white;
 }
 section.chart-setting-container {
@@ -247,6 +250,36 @@ section.career-chart-container {
   border: 1px solid #ccc;
   border-width: 5px 0 0;
 }
+.export-chart ul {
+  padding: 0;
+  margin: 10px 0;
+}
+.copy-chart-url,
+.share-chart-to-X {
+  display: inline-block;
+  color: white;
+  margin: 10px 15px 0 0;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 0.9em;
+  cursor: pointer;
+}
+.copy-chart-url {
+  background: #dc143c;
+}
+.share-chart-to-X {
+  background: #333;
+}
+.export-chart textarea {
+  border: 0;
+  height: 40px;
+  width: 100%;
+  padding: 10px;
+  line-height: 20px;
+  background: #eee;
+  border-radius: 5px;
+  white-space: nowrap;
+}
 footer {
   padding: 20px 30px;
   background: #eee;
@@ -388,6 +421,13 @@ footer .content {
       </div>
     </div>
   </div>
+  <nav class="export-chart" v-if="chart.latestYear">
+    <ul>
+      <li class="copy-chart-url" @click="makeChartURL">チャートURLをコピーする</li>
+      <li class="share-chart-to-X">チャートURLを&#x1D54F;にポスト</li>
+    </ul>
+    <textarea id="exported-chart-url">${ exportedChartURL }</textarea>
+  </nav>
 </section>
 <footer class="clearfix">
   <div class="original-tweet">
@@ -479,6 +519,7 @@ var app = new Vue({
     },
     achievementTypeList: ['journal', 'intlConf', 'domesticConf'],
     achievementNameList: {'journal': '論文誌・ジャーナル', 'intlConf': '国際会議プロシーディングス', 'domesticConf': '国内研究会・シンポジウム'},
+    exportedChartURL: ''
   },
   created: function() {
   },
@@ -745,6 +786,71 @@ var app = new Vue({
         width: (this.chart.settings.cellWidth * (item.to - item.from)) + 'px',
         left: (this.chart.settings.cellWidth * (item.from - this.chart.firstYear)) + 'px'
       };
+    },
+    makeChartURL() {
+      let eaj = [];
+      for(let i=0; i<this.chart.educationsAndJobs.length; i++) {
+        let tmp = [];
+        for(let j=0; j<this.chart.educationsAndJobs[i].length; j++) {
+          let data = this.chart.educationsAndJobs[i][j];
+          tmp.push([
+            parseFloat((data.from-2000.0).toFixed(2)),
+            parseFloat((data.to-2000.0).toFixed(2)),
+            data.name,
+            Number(data.isEdu)
+          ]);
+        }
+        eaj.push(tmp);
+      }
+      let grants = [];
+      for(let i=0; i<this.chart.grants.length; i++) {
+        let tmp = [];
+        for(let j=0; j<this.chart.grants[i].length; j++) {
+          let data = this.chart.grants[i][j];
+          tmp.push([
+            parseFloat((data.from-2000.0).toFixed(2)),
+            parseFloat((data.to-2000.0).toFixed(2)),
+            data.name,
+            Number(data.isPI)
+          ]);
+        }
+        grants.push(tmp);
+      }
+      let achvmnt = [];
+      for(let type of this.achievementTypeList) {
+        let tmp = [];
+        for(let i=this.chart.firstYear; i<=this.chart.latestYear; i++) {
+          let val = this.chart.achievements[type][String(i)];
+          let principal = val.filter(e => e == 1).length;
+          let coauthor  = val.filter(e => e == 0).length;
+          tmp.push(principal+'-'+coauthor);
+        }
+        tmp = tmp.join('_').replaceAll('0-0', '').replaceAll('0', '');
+        achvmnt.push(tmp);
+      }
+      let expJson = [
+        // researcher info
+        encodeURI(this.researcher.name.display),
+        encodeURI(this.researcher.affiliation.display),
+        // year
+        this.chart.firstYear-2000,
+        this.chart.latestYear-2000,
+        // setting
+        this.chart.settings.cellWidth,
+        Number(this.chart.settings.visibility.journal),
+        Number(this.chart.settings.visibility.intlConf),
+        Number(this.chart.settings.visibility.domesticConf),
+        Number(this.chart.settings.visibility.notPIgrants),
+        // chart
+        encodeURI(eaj),
+        encodeURI(grants),
+        encodeURI(achvmnt)
+      ];
+      this.exportedChartURL = 'https://career-chart.yukimat.jp/?d=' + expJson.join('##');
+      setTimeout(() => {
+        $('exported-chart-url').select();
+        document.execCommand('copy');
+      }, 100);
     }
   },
   computed: {
