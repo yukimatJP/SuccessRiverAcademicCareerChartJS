@@ -270,21 +270,29 @@ section.career-chart-container {
   padding: 0;
   margin: 10px 0;
 }
-.copy-chart-url,
-.share-chart-to-X {
+.export-chart ul li {
   display: inline-block;
   color: white;
-  margin: 10px 10px 5px 0;
-  padding: 10px 20px;
+  margin: 10px 5px 5px 0;
+  padding: 5px 10px;
   border-radius: 5px;
   font-size: 0.9em;
   cursor: pointer;
+}
+.export-chart ul li:hover {
+  opacity: 0.7;
 }
 .copy-chart-url {
   background: #dc143c;
 }
 .share-chart-to-X {
   background: #333;
+}
+.embed-chart {
+  background: #339;
+}
+.print-chart {
+  background: #393;
 }
 .export-chart textarea {
   border: 0;
@@ -329,8 +337,33 @@ footer .original-tweet {
 footer .content {
   margin: 25px 0;
 }
+
+.app.embed header,
+.app.embed footer,
+.app.embed .file-select-container,
+.app.embed .chart-setting-container,
+.app.embed .career-chart-container h2,
+.app.embed .export-chart,
+.app.print header,
+.app.print footer,
+.app.print .file-select-container,
+.app.print .chart-setting-container,
+.app.print .career-chart-container h2,
+.app.print .export-chart {
+  display: none;
+}
+.app.embed .career-chart-container,
+.app.print .career-chart-container {
+  padding: 0px;
+}
+.app.embed .career-chart,
+.app.print .career-chart {
+  width: 100vw;
+  border: none;
+}
+
 </style>
-<div class="app" id="app">
+<div class="app" id="app" :class="{embed: isEmbeddingMode, print:isPrintingMode}">
 <header class="clearfix">
   <h1>SuccessRiver AcademicCareerChart (${ systemVersion })</h1>
   <nav>
@@ -395,7 +428,7 @@ footer .content {
   <h2>③ キャリアチャート出力結果</h2>
   <div class="career-chart-empty" v-if="!chart.latestYear"><label for="researchmap-file-input">ファイルを選択してください</label></div>
   <div class="career-chart" v-if="chart.latestYear" @scroll="onScrollChart">
-    <div class="career-chart-wrap">
+    <div class="career-chart-wrap" id="career-chart-wrap">
       <div class="researcher-info">
         <h3>
           ${ researcher.name.display }
@@ -452,6 +485,8 @@ footer .content {
     <ul>
       <li class="copy-chart-url" @click="exportChart">チャートURLをコピーする</li>
       <li class="share-chart-to-X" @click="shareChartToX">チャートURLを&#x1D54F;にポスト</li>
+      <li class="embed-chart" @click="embedChart">埋め込みコードを取得する</li>
+      <li class="print-chart" @click="printChart">印刷モードで表示</li>
     </ul>
     <textarea id="exported-chart-url">${ exportedChartURL }</textarea>
   </nav>
@@ -473,6 +508,9 @@ footer .content {
     </p>
     <h2>◇ リリースノート</h2>
     <ul class="release-note">
+      <li>
+        2023/08/20 (v1.2公開)<br>
+        埋め込みコードと印刷表示に対応。
       <li>
         2023/08/20 (v1.1公開)<br>
         生成したチャートをURLとして共有できるようになりました。なお、ロングキャリアの研究者はURLが長くなりすぎて文字数制限の問題が生じるかもしれません。
@@ -504,7 +542,9 @@ var app = new Vue({
   delimiters: ['${', '}'],
   el: '#app',
   data: {
-    isSharingMode: false,
+    isSharingMode:   false,
+    isEmbeddingMode: false,
+    isPrintingMode:  false,
     rmFile: null,
     rmJson: null,
     researcher: {
@@ -565,6 +605,12 @@ var app = new Vue({
         this.isSharingMode = true;
         this.importData = params.get('chart');
         this.importChart();
+      }
+      if(params.has('embed')) {
+        this.isEmbeddingMode = true;
+      }
+      if(params.has('print')) {
+        this.isPrintingMode = true;
       }
     },
     selectrmFile: function(e) {
@@ -893,8 +939,23 @@ var app = new Vue({
     },
     shareChartToX() {
       this.exportChart();
-      let url = encodeURI('https://twitter.com/intent/tweet?text=サクセスリバー式キャリアチャートを作ってみたよ！\n→ ' + this.exportedChartURL + '\n\n&hashtags=SuccessRiverAcademicCareerChartJS,サクセスリバー式キャリアチャート');
+      let url = encodeURI('https://twitter.com/intent/tweet?text=サクセスリバー式キャリアチャートを作ってみたよ！\n→ ' + this.exportedChartURL + '\n\n@yukimatJP&hashtags=SuccessRiverAcademicCareerChartJS,サクセスリバー式キャリアチャート');
       window.open(url, "_blank");
+    },
+    embedChart() {
+      this.exportChart();
+      let ww = $("career-chart-wrap").offsetWidth + 130;
+      let wh = $("career-chart-wrap").offsetHeight + 60;
+      this.exportedChartURL = '<iframe src="' + this.exportedChartURL.replace('?chart=', '?embed&chart=') + '" width=' + ww + ' height=' + wh + '>';
+      setTimeout(() => {
+        $('exported-chart-url').select();
+        document.execCommand('copy');
+      }, 100);
+    },
+    printChart() {
+      this.exportChart();
+      this.exportedChartURL = this.exportedChartURL.replace('?chart=', '?print&chart=');
+      window.open(this.exportedChartURL, "_blank");
     },
     importChart() {
       let d = this.importData.split('...');
@@ -966,7 +1027,7 @@ var app = new Vue({
     }
   },
   computed: {
-    systemVersion: function() { return 'v1.1'; }
+    systemVersion: function() { return 'v1.2'; }
   }
 });
 app.initialize();
