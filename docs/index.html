@@ -31,10 +31,26 @@
   background: #333;
 }
 .app > header h1 {
+  float: left;
   font-size: 1.2em;
   line-height: 40px;
   padding: 0 20px;
   color: white;
+}
+.app > header nav ul {
+  padding: 0;
+  margin: 0;
+  float: right;
+}
+.app > header nav ul li {
+  display: inline-block;
+}
+.app > header nav ul li a {
+  display: block;
+  padding: 10px;
+  line-height: 20px;
+  color: white;
+  text-decoration: none;
 }
 .app > section h2 {
   font-size: 1.1em;
@@ -315,8 +331,13 @@ footer .content {
 }
 </style>
 <div class="app" id="app">
-<header>
-  <h1>SuccessRiver AcademicCareerChart</h1>
+<header class="clearfix">
+  <h1>SuccessRiver AcademicCareerChart (${ systemVersion })</h1>
+  <nav>
+    <ul>
+      <li><a href="https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS">Github</a>
+    </ul>
+  </nav>
 </header>
 <section class="file-select-container">
   <h2>① researchmapのエクスポートファイルを選択</h2>
@@ -442,7 +463,7 @@ footer .content {
   <div class="content">
     <h2>◆ このページについて</h2>
     <p>
-      「SuccessRiver AcademicCareerChart」は、<a href="https://twitter.com/rei_nari">@rei_nari</a>さん考案のキャリアイベント図をresearchmapに登録された情報から生成します。
+      「SuccessRiver AcademicCareerChart (${ systemVersion })」は、<a href="https://twitter.com/rei_nari">@rei_nari</a>さん考案のキャリアイベント図をresearchmapに登録された情報から生成します。
     </p>
     <p>
       Githubリポジトリ： <a href="https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS">https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS</a>
@@ -453,9 +474,11 @@ footer .content {
     <h2>◇ リリースノート</h2>
     <ul class="release-note">
       <li>
+        2023/08/20 (v1.1公開)<br>
+        生成したチャートをURLとして共有できるようになりました。なお、ロングキャリアの研究者はURLが長くなりすぎて文字数制限の問題が生じるかもしれません。
+      <li>
         2023/08/19（システム公開）<br>
         本システムは週末ひとりハッカソンの成果のため、対応していない部分が多々あります（そもそも、自分のresearchmapの使い方が間違えてる部分もありそう）。予算や学歴・職歴のラベルに関してはもう少しいい感じにしたいところです。
-      </li>
     </ul>
   </div>
 </footer>
@@ -943,6 +966,7 @@ var app = new Vue({
     }
   },
   computed: {
+    systemVersion: function() { return 'v1.1'; }
   }
 });
 app.initialize();
