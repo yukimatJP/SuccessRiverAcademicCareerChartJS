@@ -968,7 +968,6 @@ var app = new Vue({
     },
     importChart() {
       let d = this.importData.split('...');
-      console.log(this.importData, d);
       this.researcher.name.display = decodeURI(d[0]);
       this.researcher.affiliation.display = decodeURI(d[1]);
       this.chart.firstYear = parseInt(d[2]) + 2000;
@@ -985,19 +984,17 @@ var app = new Vue({
         let tmp = parseFloat(eaj[i*4]);
         let yearFrom = {
           year: parseInt(tmp + 2000),
-          month: Math.ceil(12 * (tmp - parseInt(tmp)))
+          month: Math.ceil(12 * (tmp - parseInt(tmp)) * (tmp < 0 ? -1 : 1))
         };
         tmp = parseFloat(eaj[i*4 + 1]);
         let yearTo   = {
           year: parseInt(tmp + 2000),
-          month: Math.floor(12 * (tmp - parseInt(tmp)))
+          month: Math.floor(12 * (tmp - parseInt(tmp)) * (tmp < 0 ? -1 : 1))
         };
-        console.log(yearFrom, yearTo);
         let eduName  = decodeURI(eaj[i*4 + 2]);
         let isEdu    = Boolean(parseInt(eaj[i*4 + 3]));
         this.career.educationsAndJobs.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': eduName, 'isEdu': isEdu});
       }
-      console.log(this.career.educationsAndJobs);
       // Grant History
       let grant = JSON.parse("[" + d[10].replaceAll('__', '"') + "]");
       for(let i=0; i<parseInt(grant.length/4); i++) {
@@ -1005,14 +1002,13 @@ var app = new Vue({
         let tmp = parseFloat(grant[i*4]);
         let yearFrom = {
           year: parseInt(tmp + 2000),
-          month: Math.ceil(12 * (tmp - parseInt(tmp)))
+          month: Math.ceil(12 * (tmp - parseInt(tmp)) * (tmp < 0 ? -1 : 1))
         };
         tmp = parseFloat(grant[i*4 + 1]);
         let yearTo   = {
           year: parseInt(tmp + 2000),
-          month: Math.floor(12 * (tmp - parseInt(tmp)))
+          month: Math.floor(12 * (tmp - parseInt(tmp)) * (tmp < 0 ? -1 : 1))
         };
-        console.log(yearFrom, yearTo);
         let grantName = decodeURI(grant[i*4 + 2]);
         let isPI      = Boolean(parseInt(grant[i*4 + 3]));
         this.career.grants.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': grantName, 'role': isPI ? 'principal' : 'coinvestigator'});
