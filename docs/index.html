@@ -258,7 +258,7 @@ section.career-chart-container {
 .share-chart-to-X {
   display: inline-block;
   color: white;
-  margin: 10px 15px 0 0;
+  margin: 10px 10px 5px 0;
   padding: 10px 20px;
   border-radius: 5px;
   font-size: 0.9em;
@@ -320,7 +320,13 @@ footer .content {
 </header>
 <section class="file-select-container">
   <h2>① researchmapのエクスポートファイルを選択</h2>
-  <div v-if="rmFile == null">
+  <div v-if="isSharingMode">
+    <p class="selected-file-name" @click="window.location.search = ''">
+      URLから生成されました。
+      <span>ファイルを変更する</span>
+    </p>
+  </div>
+  <div v-else-if="rmFile == null">
     <label for="researchmap-file-input">ファイルを選択</label>
     <input type="file" id="researchmap-file-input" @change="selectrmFile"></li>
   </div>
@@ -423,7 +429,7 @@ footer .content {
   </div>
   <nav class="export-chart" v-if="chart.latestYear">
     <ul>
-      <li class="copy-chart-url" @click="makeChartURL">チャートURLをコピーする</li>
+      <li class="copy-chart-url" @click="exportChart">チャートURLをコピーする</li>
       <li class="share-chart-to-X">チャートURLを&#x1D54F;にポスト</li>
     </ul>
     <textarea id="exported-chart-url">${ exportedChartURL }</textarea>
@@ -475,6 +481,7 @@ var app = new Vue({
   delimiters: ['${', '}'],
   el: '#app',
   data: {
+    isSharingMode: false,
     rmFile: null,
     rmJson: null,
     researcher: {
@@ -519,7 +526,8 @@ var app = new Vue({
     },
     achievementTypeList: ['journal', 'intlConf', 'domesticConf'],
     achievementNameList: {'journal': '論文誌・ジャーナル', 'intlConf': '国際会議プロシーディングス', 'domesticConf': '国内研究会・シンポジウム'},
-    exportedChartURL: ''
+    exportedChartURL: '',
+    importData: '',
   },
   created: function() {
   },
@@ -528,6 +536,14 @@ var app = new Vue({
   destroyed: function () {
   },
   methods: {
+    initialize: function() {
+      let params = new URLSearchParams(window.location.search);
+      if(params.has('chart')) {
+        this.isSharingMode = true;
+        this.importData = params.get('chart');
+        this.importChart();
+      }
+    },
     selectrmFile: function(e) {
       const files = e.target.files || e.dataTransfer.files;
       this.rmFile = (files[0].name.split('.').pop() == 'jsonl') ? files[0] : null;
@@ -787,7 +803,7 @@ var app = new Vue({
         left: (this.chart.settings.cellWidth * (item.from - this.chart.firstYear)) + 'px'
       };
     },
-    makeChartURL() {
+    exportChart() {
       let eaj = [];
       for(let i=0; i<this.chart.educationsAndJobs.length; i++) {
         let tmp = [];
@@ -796,7 +812,7 @@ var app = new Vue({
           tmp.push([
             parseFloat((data.from-2000.0).toFixed(2)),
             parseFloat((data.to-2000.0).toFixed(2)),
-            data.name,
+            "__" + data.name + "__",
             Number(data.isEdu)
           ]);
         }
@@ -810,7 +826,7 @@ var app = new Vue({
           tmp.push([
             parseFloat((data.from-2000.0).toFixed(2)),
             parseFloat((data.to-2000.0).toFixed(2)),
-            data.name,
+            "__" + data.name + "__",
             Number(data.isPI)
           ]);
         }
@@ -846,15 +862,84 @@ var app = new Vue({
         encodeURI(grants),
         encodeURI(achvmnt)
       ];
-      this.exportedChartURL = 'https://career-chart.yukimat.jp/?d=' + expJson.join('##');
+      this.exportedChartURL = 'https://career-chart.yukimat.jp/?chart=' + expJson.join('...');
       setTimeout(() => {
         $('exported-chart-url').select();
         document.execCommand('copy');
       }, 100);
+    },
+    importChart() {
+      let d = this.importData.split('...');
+      console.log(this.importData, d);
+      this.researcher.name.display = decodeURI(d[0]);
+      this.researcher.affiliation.display = decodeURI(d[1]);
+      this.chart.firstYear = parseInt(d[2]) + 2000;
+      this.chart.latestYear = parseInt(d[3]) + 2000;
+      this.chart.settings.cellWidth = parseInt(d[4]);
+      this.chart.settings.visibility.journal = Boolean(parseInt(d[5]));
+      this.chart.settings.visibility.intlConf = Boolean(parseInt(d[6]));
+      this.chart.settings.visibility.domesticConf = Boolean(parseInt(d[7]));
+      this.chart.settings.visibility.notPIgrants = Boolean(parseInt(d[8]));
+      // Education and Job History
+      let eaj = JSON.parse("[" + d[9].replaceAll('__', '"') + "]");
+      for(let i=0; i<parseInt(eaj.length/4); i++) {
+        let eajItem = []
+        let tmp = parseFloat(eaj[i*4]);
+        let yearFrom = {
+          year: parseInt(tmp + 2000),
+          month: Math.ceil(12 * (tmp - parseInt(tmp)))
+        };
+        tmp = parseFloat(eaj[i*4 + 1]);
+        let yearTo   = {
+          year: parseInt(tmp + 2000),
+          month: Math.floor(12 * (tmp - parseInt(tmp)))
+        };
+        console.log(yearFrom, yearTo);
+        let eduName  = decodeURI(eaj[i*4 + 2]);
+        let isEdu    = Boolean(parseInt(eaj[i*4 + 3]));
+        this.career.educationsAndJobs.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': eduName, 'isEdu': isEdu});
+      }
+      console.log(this.career.educationsAndJobs);
+      // Grant History
+      let grant = JSON.parse("[" + d[10].replaceAll('__', '"') + "]");
+      for(let i=0; i<parseInt(grant.length/4); i++) {
+        let grantItem = []
+        let tmp = parseFloat(grant[i*4]);
+        let yearFrom = {
+          year: parseInt(tmp + 2000),
+          month: Math.ceil(12 * (tmp - parseInt(tmp)))
+        };
+        tmp = parseFloat(grant[i*4 + 1]);
+        let yearTo   = {
+          year: parseInt(tmp + 2000),
+          month: Math.floor(12 * (tmp - parseInt(tmp)))
+        };
+        console.log(yearFrom, yearTo);
+        let grantName = decodeURI(grant[i*4 + 2]);
+        let isPI      = Boolean(parseInt(grant[i*4 + 3]));
+        this.career.grants.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': grantName, 'role': isPI ? 'principal' : 'coinvestigator'});
+      }
+      // Achievement History (paper)
+      let achievements = d[11].split(',');
+      for(let i=0; i<achievements.length; i++) {
+        let tmp = achievements[i].split('_');
+        for(let j=0; j<tmp.length; j++) {
+          let achvmntYear = String(j + this.chart.firstYear);
+          if(this.achievementTypeList[i] != undefined && tmp[j] != '') {
+            let [firstCorresp, other] = tmp[j].split('-');
+            firstCorresp = (firstCorresp == '') ? 0 : parseInt(firstCorresp);
+            other = (other == '') ? 0 : parseInt(other);
+            this.career.achievements[this.achievementTypeList[i]][achvmntYear] = {'firstCorresp': firstCorresp, 'first': 0, 'corresp': 0, 'other': other, 'total': firstCorresp + other};
+          }
+        }
+      }
+      this.updateCellWidth();
+      this.replotCareerHistory();
     }
   },
   computed: {
   }
 });
+app.initialize();
 </script>
 </html>
