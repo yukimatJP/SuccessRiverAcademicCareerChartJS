@@ -430,7 +430,7 @@ footer .content {
   <nav class="export-chart" v-if="chart.latestYear">
     <ul>
       <li class="copy-chart-url" @click="exportChart">チャートURLをコピーする</li>
-      <li class="share-chart-to-X">チャートURLを&#x1D54F;にポスト</li>
+      <li class="share-chart-to-X" @click="shareChartToX">チャートURLを&#x1D54F;にポスト</li>
     </ul>
     <textarea id="exported-chart-url">${ exportedChartURL }</textarea>
   </nav>
@@ -867,6 +867,11 @@ var app = new Vue({
         $('exported-chart-url').select();
         document.execCommand('copy');
       }, 100);
+    },
+    shareChartToX() {
+      this.exportChart();
+      let url = encodeURI('https://twitter.com/intent/tweet?text=サクセスリバー式キャリアチャートを作ってみたよ！\n→ ' + this.exportedChartURL + '\n\n&hashtags=SuccessRiverAcademicCareerChartJS,サクセスリバー式キャリアチャート');
+      window.open(url, "_blank");
     },
     importChart() {
       let d = this.importData.split('...');
