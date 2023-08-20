@@ -716,7 +716,7 @@ var app = new Vue({
       }
     },
     getFinancialYear(targetDate, isFrom) {
-      if(targetDate == "9999"){
+      if(targetDate == "9999" || targetDate == undefined || targetDate == null){
         return {'year': new Date().getFullYear() + 1, 'month': isFrom ? 4 : 3};
       }
       dt = targetDate.split('-');
@@ -729,37 +729,44 @@ var app = new Vue({
       if(this.chart.latestYear < yearTo  ) { this.chart.latestYear = Math.min(new Date().getFullYear(), yearTo);   }
     },
     getEduName(edu) {
-      if     (edu.ja.includes("修士"))       { return '修士課程' }
-      else if(edu.ja.includes("修士課程"))    { return '修士課程' }
-      else if(edu.ja.includes("博士前期課程")) { return '博士前期課程' }
-      else if(edu.ja.includes("博士後期課程")) { return '博士後期課程' }
-      else if(edu.ja.includes("博士課程"))    { return '博士課程' }
-      else if(edu.ja.includes("博士"))       { return '博士課程' }
-      else if(edu.ja.includes("研究科"))     { return '大学院' }
-      else                                  { return '-' }
+      if('ja' in edu) {
+        if     (edu.ja.includes("修士"))       { return '修士課程'; }
+        else if(edu.ja.includes("修士課程"))    { return '修士課程'; }
+        else if(edu.ja.includes("博士前期課程")) { return '博士前期課程'; }
+        else if(edu.ja.includes("博士後期課程")) { return '博士後期課程'; }
+        else if(edu.ja.includes("博士課程"))    { return '博士課程'; }
+        else if(edu.ja.includes("博士"))       { return '博士課程'; }
+        else if(edu.ja.includes("研究科"))     { return '大学院'; }
+        else                                  { return edu.ja; }
+      } else if('en' in edu) {
+        return edu.en;
+      }
     },
     getJobName(job) {
+      let lang = ('ja' in job.job) ? 'ja' : 'en';
       if('affiliation' in job) {
-        jobName = job.affiliation.ja + "・" + job.job.ja;
+        jobName = job.affiliation[lang] + "・" + job.job[lang];
       } else {
-        jobName = job.job.ja;
+        jobName = job.job[lang];
       }
-      if(jobName.includes("日本学術振興会")) {
-        jobName = jobName.includes("DC1") ? "学振DC1"
-                : jobName.includes("DC2") ? "学振DC2"
-                : jobName.includes("RPD") ? "学振RPD"
-                : jobName.includes("SPD") ? "学振SPD"
-                : jobName.includes("PD")  ? "学振PD"  : 'その他';
+      if(lang == 'ja') {
+        if(jobName.includes("日本学術振興会")) {
+          jobName = jobName.includes("DC1") ? "学振DC1"
+                  : jobName.includes("DC2") ? "学振DC2"
+                  : jobName.includes("RPD") ? "学振RPD"
+                  : jobName.includes("SPD") ? "学振SPD"
+                  : jobName.includes("PD")  ? "学振PD"  : 'その他';
+        }
       }
       return jobName;
     },
     getGrantName(grant) {
       let grantName = '';
       if('category' in grant) {
-        grantName = grant.category.ja;
+        grantName = grant.category[('ja' in grant.category) ? 'ja' : 'en'];
       }
       if(grantName == '' && 'system_name' in grant) {
-        grantName = grant.system_name.ja;
+        grantName = grant.system_name[('ja' in grant.system_name) ? 'ja' : 'en'];
       }
       return grantName;
     },
@@ -767,8 +774,9 @@ var app = new Vue({
       // set CSS property
       this.updateCellWidth();
       // Education and Job History
-      for(let i=0; i<this.career.educationsAndJobs.length; i++) {
-        let newItem = this.getEducationAndJobItem(this.career.educationsAndJobs[i]);
+      let edujob = this.career.educationsAndJobs.sort((a, b) => a.yearFrom.year - b.yearFrom.year);
+      for(let i=0; i<edujob.length; i++) {
+        let newItem = this.getEducationAndJobItem(edujob[i]);
         if(this.chart.educationsAndJobs.length == 0) {
           this.chart.educationsAndJobs.push([newItem]);
         } else {
@@ -787,8 +795,9 @@ var app = new Vue({
         }
       }
       // Grant History
-      for(let i=0; i<this.career.grants.length; i++) {
-        let newItem = this.getGrantItem(this.career.grants[i]);
+      let grants = this.career.grants.sort((a, b) => a.yearFrom.year - b.yearFrom.year);
+      for(let i=0; i<grants.length; i++) {
+        let newItem = this.getGrantItem(grants[i]);
         if(this.chart.settings.visibility.notPIgrants || newItem.isPI) {
           if(this.chart.grants.length == 0) {
             this.chart.grants.push([newItem]);
