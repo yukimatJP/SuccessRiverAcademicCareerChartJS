@@ -5,7 +5,9 @@
 
 Githubリポジトリ： <a href="https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS">https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS</a>
 
-作者情報： 松田裕貴（<a href="https://twitter.com/yukimatJP">@yukimatJP</a>）
+作者情報：
+- 松田裕貴（<a href="https://twitter.com/yukimatJP">@yukimatJP</a>）
+- 岡山大学 コンヴィヴィアルコンピューティング研究室（<a href="https://twitter.com/cocolabJP">@cocolabJP</a>）
 
 <img width="1539" alt="SuccessRiverAcademicCareerChart" src="https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS/assets/3212917/09d336cb-0779-4006-9f15-033e0d36d399">
 
@@ -15,6 +17,10 @@ Githubリポジトリ： <a href="https://github.com/yukimatJP/SuccessRiverAcade
 
 ## Release Note
 
+- 2025/12/27 (v1.4.1)  
+  researchmapファイルを選び直したときのバグを修正。
+- 2025/12/27 (v1.4)  
+  静的なHTMLファイルとしてチャートを出力できるようになりました。
 - 2025/12/26 (v1.3)  
   年表示をチャートの上部に表示し、交互に背景色をつけることで、縦に長いチャートでも見やすくなりました。
 - 2023/08/20 (v1.2.1)  

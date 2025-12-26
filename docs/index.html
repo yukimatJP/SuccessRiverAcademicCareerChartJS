@@ -68,7 +68,7 @@ section.file-select-container input {
 section.file-select-container label {
   display: inline-block;
   padding: 10px 20px;
-  background: #bbb;  
+  background: #bbb;
   border-radius: 5px;
   cursor: pointer;
 }
@@ -152,7 +152,6 @@ section.career-chart-container {
   display: block;
   margin: 30px 50px 20px;
   width: var(--row-width);
-  min-height: calc(100vh - 50px);
 }
 .year-background {
   position: absolute;
@@ -329,6 +328,9 @@ section.career-chart-container {
 .print-chart {
   background: #393;
 }
+.export-html {
+  background: #933;
+}
 .export-chart textarea {
   border: 0;
   height: 40px;
@@ -396,7 +398,9 @@ footer .content {
   width: 100vw;
   border: none;
 }
-
+.app.print .career-chart-wrap {
+  min-height: calc(100vh - 50px);
+}
 </style>
 <div class="app" id="app" :class="{embed: isEmbeddingMode, print:isPrintingMode}">
 <header class="clearfix">
@@ -408,19 +412,19 @@ footer .content {
   </nav>
 </header>
 <section class="file-select-container">
-  <h2>① researchmapのエクスポートファイルを選択</h2>
+  <h2>① researchmapのエクスポートファイル（.jsonl）を選択</h2>
   <div v-if="isSharingMode">
-    <p class="selected-file-name" @click="window.location.search = ''">
+    <p class="selected-file-name" @click="resetPage">
       URLから生成されました。
       <span>ファイルを変更する</span>
     </p>
   </div>
   <div v-else-if="rmFile == null">
     <label for="researchmap-file-input">ファイルを選択</label>
-    <input type="file" id="researchmap-file-input" @change="selectrmFile"></li>
+    <input type="file" id="researchmap-file-input" @change="selectResearchmapFile"></li>
   </div>
   <div v-else>
-    <p class="selected-file-name" @click="rmFile = null">
+    <p class="selected-file-name" @click="clearCareerHistory">
       ${ rmFile.name }
       <span>ファイルを変更する</span>
     </p>
@@ -536,6 +540,7 @@ footer .content {
       <li class="share-chart-to-X" @click="shareChartToX">チャートURLを&#x1D54F;にポスト</li>
       <li class="embed-chart" @click="embedChart">埋め込みコードを取得する</li>
       <li class="print-chart" @click="printChart">印刷モードで表示</li>
+      <li class="export-html" @click="exportHTML">HTMLファイルをエクスポート</li>
     </ul>
     <textarea id="exported-chart-url">${ exportedChartURL }</textarea>
   </nav>
@@ -547,20 +552,27 @@ footer .content {
   <div class="content">
     <h2>◆ このページについて</h2>
     <p>
-      「SuccessRiver AcademicCareerChart (${ systemVersion })」は、<a href="https://twitter.com/rei_nari">@rei_nari</a>さん考案のキャリアイベント図をresearchmapに登録された情報から生成します。
+      「SuccessRiver AcademicCareerChart (${ systemVersion })」は、<a href="https://x.com/rei_nari">@rei_nari</a>さん考案のキャリアイベント図をresearchmapに登録された情報から生成します。
     </p>
     <p>
-      Githubリポジトリ： <a href="https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS">https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS</a>
+      <b>Githubリポジトリ</b>： <a href="https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS">https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS</a>
     </p>
     <p>
-      作者情報： 松田裕貴（<a href="https://twitter.com/yukimatJP">@yukimatJP</a>）
+      <b>制作者</b>：<br>
+      松田裕貴（<a href="https://x.com/yukimatJP">@yukimatJP</a>）<br>
+      岡山大学 コンヴィヴィアルコンピューティング研究室（<a href="https://x.com/cocolabJP">@cocolabJP</a>）
     </p>
     <h2>◇ リリースノート</h2>
     <ul class="release-note">
       <li>
+        2025/12/27 (v1.4.1)<br>
+        researchmapファイルを選び直したときのバグを修正。
+      <li>
+        2025/12/27 (v1.4)<br>
+        静的なHTMLファイルとしてチャートを出力できるようになりました。
+      <li>
         2025/12/26 (v1.3)<br>
         年表示をチャートの上部に表示し、交互に背景色をつけることで、縦に長いチャートでも見やすくなりました。
-      </li>
       <li>
         2023/08/20 (v1.2.1)<br>
         英語表記のみの学歴・職歴・予算への対応、年月日の設定のないデータに対するエラーハンドリング。
@@ -579,21 +591,21 @@ footer .content {
 </div>
 <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js"></script>
 <script>
-const $ = (id) => { return document.getElementById(id); }
+const $ = (id) => document.getElementById(id);
+
 const JSONL = {
   parse: (jsonl) => {
-    let jsonlArray = jsonl.split("\n").filter(function (s) { return s !== ""; });
-     let jsonlObj = {}
-    for(let i=0; i < jsonlArray.length; i++) {
-      jsonlRow = JSON.parse(jsonlArray[i]);
-       if(!(jsonlRow.insert.type in jsonlObj)) {
-         jsonlObj[jsonlRow.insert.type] = [];
-       }
+    let jsonlArray = jsonl.split("\n").filter(s => s !== "");
+    let jsonlObj = {};
+    for(let i=0; i<jsonlArray.length; i++) {
+      let jsonlRow = JSON.parse(jsonlArray[i]);
+      if(!(jsonlRow.insert.type in jsonlObj)) jsonlObj[jsonlRow.insert.type] = [];
       jsonlObj[jsonlRow.insert.type].push(jsonlRow.merge);
     }
     return jsonlObj;
   }
-}
+};
+
 var app = new Vue({
   delimiters: ['${', '}'],
   el: '#app',
@@ -648,12 +660,6 @@ var app = new Vue({
     exportedChartURL: '',
     importData: '',
   },
-  created: function() {
-  },
-  mounted: function() {
-  },
-  destroyed: function () {
-  },
   methods: {
     initialize: function() {
       let params = new URLSearchParams(window.location.search);
@@ -662,23 +668,68 @@ var app = new Vue({
         this.importData = params.get('chart');
         this.importChart();
       }
-      if(params.has('embed')) {
-        this.isEmbeddingMode = true;
-      }
-      if(params.has('print')) {
-        this.isPrintingMode = true;
-      }
+      if(params.has('embed')) this.isEmbeddingMode = true;
+      if(params.has('print')) this.isPrintingMode = true;
     },
-    selectrmFile: function(e) {
+    resetPage: function() {
+      this.clearCareerHistory();
+      window.location.search = '';
+    },
+    selectResearchmapFile: function(e) {
+      this.clearCareerHistory();
       const files = e.target.files || e.dataTransfer.files;
       this.rmFile = (files[0].name.split('.').pop() == 'jsonl') ? files[0] : null;
       var reader = new FileReader();
       reader.readAsText(this.rmFile);
-      reader.onload = () => {  
+      reader.onload = () => {
         this.rmJson = JSONL.parse(reader.result);
         this.parseCareerHistory();
         this.plotCareerHistory();
       };
+    },
+    clearCareerHistory: function() {
+      this.rmFile = null;
+      this.rmJson = null;
+
+      this.exportedChartURL = '';
+      this.importData = '';
+
+      this.researcher = {
+        name: { ja: [], en: [], display: '' },
+        affiliation: { display: '' }
+      };
+
+      this.career = {
+        educationsAndJobs: [],
+        grants: [],
+        achievements: {
+          journal:      { total: 0 },
+          intlConf:     { total: 0 },
+          domesticConf: { total: 0 },
+          total: 0
+        }
+      };
+
+      this.chart.firstYear = new Date().getFullYear();
+      this.chart.latestYear = 0;
+
+      this.chart.settings.cellWidth = 50;
+      this.chart.settings.visibility.journal = true;
+      this.chart.settings.visibility.intlConf = true;
+      this.chart.settings.visibility.domesticConf = true;
+      this.chart.settings.visibility.notPIgrants = true;
+
+      this.chart.educationsAndJobs = [];
+      this.chart.grants = [];
+      this.chart.achievements = { journal: {}, intlConf: {}, domesticConf: {} };
+
+      const root = document.documentElement;
+      root.style.setProperty('--col-width', this.chart.settings.cellWidth + "px");
+      root.style.setProperty('--row-width', "50px");
+      root.style.setProperty('--chart-header-position', "0px");
+
+      const sc = document.querySelector(".career-chart");
+      if (sc) sc.scrollLeft = 0;
     },
     parseCareerHistory() {
       // Basic Info
@@ -697,31 +748,27 @@ var app = new Vue({
         this.researcher.affiliation.display = researcher.affiliations[0].affiliation.ja;
       }
       // Education History
-      for(let i=0; i < this.rmJson.education.length; i++) {
+      for(let i=0; i<this.rmJson.education.length; i++) {
         let edu = this.rmJson.education[i];
         let yearFrom = this.getFinancialYear(edu.from_date);
         let yearTo   = this.getFinancialYear(edu.to_date);
         let eduName  = '';
-        if('course' in edu) {
-          eduName = this.getEduName(edu.course);
-        }
-        if(eduName == '' && 'department' in edu) {
-          eduName = this.getEduName(edu.department);
-        }
-        this.career.educationsAndJobs.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': eduName, 'isEdu': true});
+        if('course' in edu) eduName = this.getEduName(edu.course);
+        if(eduName == '' && 'department' in edu) eduName = this.getEduName(edu.department);
+        this.career.educationsAndJobs.push({yearFrom, yearTo, name:eduName, isEdu:true});
         this.updateCareerPeriod(yearFrom.year, yearTo.year);
       }
       // Job History
-      for(let i=0; i < this.rmJson.research_experience.length; i++) {
+      for(let i=0; i<this.rmJson.research_experience.length; i++) {
         let job = this.rmJson.research_experience[i];
         let yearFrom = this.getFinancialYear(job.from_date);
         let yearTo   = this.getFinancialYear(job.to_date);
         let jobName  = ('job' in job) ? this.getJobName(job) : '';
-        this.career.educationsAndJobs.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': jobName, 'isEdu': false});
+        this.career.educationsAndJobs.push({yearFrom, yearTo, name:jobName, isEdu:false});
         this.updateCareerPeriod(yearFrom.year, yearTo.year);
       }
       // Grant History
-      for(let i=0; i < this.rmJson.research_projects.length; i++) {
+      for(let i=0; i<this.rmJson.research_projects.length; i++) {
         let grant = this.rmJson.research_projects[i];
         let yearFrom  = this.getFinancialYear(grant.from_date);
         let yearTo    = this.getFinancialYear(grant.to_date);
@@ -734,46 +781,51 @@ var app = new Vue({
         this.updateCareerPeriod(yearFrom.year, yearTo.year);
       }
       // Achievement History (paper)
-      for(let i=0; i < this.rmJson.published_papers.length; i++) {
+      for(let i=0; i<this.rmJson.published_papers.length; i++) {
         let achvmnt = this.rmJson.published_papers[i];
-        if ('published_paper_type' in achvmnt) {
-          let achvmntType = achvmnt.published_paper_type == 'scientific_journal' ? 'journal'
-                          : achvmnt.published_paper_type == 'international_conference_proceedings' ? 'intlConf'
-                          : achvmnt.published_paper_type == 'symposium' ? 'domesticConf'
-                          : '';
-          if(achvmntType != '') {
-            let firstAuthorFlag = false;
-            let correspAuthorFlag = false;
-            if('published_paper_owner_roles' in achvmnt) {
-              firstAuthorFlag = achvmnt.published_paper_owner_roles.includes('lead');
-              correspAuthorFlag = achvmnt.published_paper_owner_roles.includes('corresponding');
-            }
-            if(!firstAuthorFlag && 'en' in achvmnt.authors) {
-              firstAuthorFlag = this.researcher.name.en.includes(achvmnt.authors.en[0].name);
-            }
-            if(!firstAuthorFlag && 'ja' in achvmnt.authors) {
-              firstAuthorFlag = this.researcher.name.ja.includes(achvmnt.authors.ja[0].name);
-            }
-            achvmntYear = this.getFinancialYear(achvmnt.publication_date).year;
-            if(!(achvmntYear in this.career.achievements[achvmntType])) {
-              this.career.achievements[achvmntType][achvmntYear] = {'firstCorresp': 0, 'first': 0, 'corresp': 0, 'other': 0, 'total': 0};
-            }
-            let roleKey = (firstAuthorFlag && correspAuthorFlag) ? 'firstCorresp'
-                        : firstAuthorFlag ? 'first'
-                        : correspAuthorFlag ? 'corresp'
-                        : 'other'
-            this.career.achievements[achvmntType][achvmntYear][roleKey]++;
-            this.career.achievements[achvmntType][achvmntYear].total++;
-            this.career.achievements[achvmntType].total++;
-            this.career.achievements.total++;
-            this.updateCareerPeriod(achvmntYear, achvmntYear);
-          }
+        if (!('published_paper_type' in achvmnt)) continue;
+
+        let achvmntType = achvmnt.published_paper_type == 'scientific_journal' ? 'journal'
+          : achvmnt.published_paper_type == 'international_conference_proceedings' ? 'intlConf'
+          : achvmnt.published_paper_type == 'symposium' ? 'domesticConf' : '';
+
+        if(achvmntType == '') continue;
+
+        let firstAuthorFlag = false;
+        let correspAuthorFlag = false;
+
+        if('published_paper_owner_roles' in achvmnt) {
+          firstAuthorFlag = achvmnt.published_paper_owner_roles.includes('lead');
+          correspAuthorFlag = achvmnt.published_paper_owner_roles.includes('corresponding');
         }
+        if(!firstAuthorFlag && 'en' in achvmnt.authors) {
+          firstAuthorFlag = this.researcher.name.en.includes(achvmnt.authors.en[0].name);
+        }
+        if(!firstAuthorFlag && 'ja' in achvmnt.authors) {
+          firstAuthorFlag = this.researcher.name.ja.includes(achvmnt.authors.ja[0].name);
+        }
+
+        achvmntYear = this.getFinancialYear(achvmnt.publication_date).year;
+
+        if(!(achvmntYear in this.career.achievements[achvmntType])) {
+          this.career.achievements[achvmntType][achvmntYear] = {firstCorresp:0, first:0, corresp:0, other:0, total:0};
+        }
+
+        let roleKey = (firstAuthorFlag && correspAuthorFlag) ? 'firstCorresp'
+                    : firstAuthorFlag ? 'first'
+                    : correspAuthorFlag ? 'corresp'
+                    : 'other'
+
+        this.career.achievements[achvmntType][achvmntYear][roleKey]++;
+        this.career.achievements[achvmntType][achvmntYear].total++;
+        this.career.achievements[achvmntType].total++;
+        this.career.achievements.total++;
+        this.updateCareerPeriod(achvmntYear, achvmntYear);
       }
     },
     getFinancialYear(targetDate, isFrom) {
-      if(targetDate == "9999" || targetDate == undefined || targetDate == null){
-        return {'year': new Date().getFullYear() + 1, 'month': isFrom ? 4 : 3};
+      if(targetDate == "9999" || targetDate == undefined || targetDate == null) {
+        return {year:new Date().getFullYear()+1, month:isFrom ? 4 : 3};
       }
       dt = targetDate.split('-');
       year  = (dt.length > 0) ? parseInt(dt[0]) : new Date.now().getYear();
@@ -782,7 +834,7 @@ var app = new Vue({
     },
     updateCareerPeriod(yearFrom, yearTo) {
       if(this.chart.firstYear  > yearFrom) { this.chart.firstYear  = yearFrom; }
-      if(this.chart.latestYear < yearTo  ) { this.chart.latestYear = Math.min(new Date().getFullYear(), yearTo);   }
+      if(this.chart.latestYear < yearTo  ) { this.chart.latestYear = Math.min(new Date().getFullYear(), yearTo); }
     },
     getEduName(edu) {
       if('ja' in edu) {
@@ -793,7 +845,7 @@ var app = new Vue({
         else if(edu.ja.includes("博士課程"))    { return '博士課程'; }
         else if(edu.ja.includes("博士"))       { return '博士課程'; }
         else if(edu.ja.includes("研究科"))     { return '大学院'; }
-        else                                  { return edu.ja; }
+        return edu.ja;
       } else if('en' in edu) {
         return edu.en;
       }
@@ -805,14 +857,13 @@ var app = new Vue({
       } else {
         jobName = job.job[lang];
       }
-      if(lang == 'ja') {
-        if(jobName.includes("日本学術振興会")) {
-          jobName = jobName.includes("DC1") ? "学振DC1"
-                  : jobName.includes("DC2") ? "学振DC2"
-                  : jobName.includes("RPD") ? "学振RPD"
-                  : jobName.includes("SPD") ? "学振SPD"
-                  : jobName.includes("PD")  ? "学振PD"  : 'その他';
-        }
+
+      if(lang == 'ja' && jobName.includes("日本学術振興会")) {
+        jobName = jobName.includes("DC1") ? "学振DC1"
+                : jobName.includes("DC2") ? "学振DC2"
+                : jobName.includes("RPD") ? "学振RPD"
+                : jobName.includes("SPD") ? "学振SPD"
+                : jobName.includes("PD")  ? "学振PD"  : 'その他';
       }
       return jobName;
     },
@@ -921,8 +972,7 @@ var app = new Vue({
       root.style.setProperty('--row-width', this.chart.settings.cellWidth * (4 + this.chart.latestYear - this.chart.firstYear) + "px");
     },
     onScrollChart(e) {
-      let root = document.documentElement;
-      root.style.setProperty('--chart-header-position', e.target.scrollLeft + "px");
+      document.documentElement.style.setProperty('--chart-header-position', e.target.scrollLeft + "px");
     },
     getAchievementRowHeight(type) {
       let maxLength = 0;
@@ -934,7 +984,7 @@ var app = new Vue({
     getStackCellStyle(item) {
       return {
         width: (this.chart.settings.cellWidth * (item.to - item.from)) + 'px',
-        left: (this.chart.settings.cellWidth * (item.from - this.chart.firstYear)) + 'px'
+        left:  (this.chart.settings.cellWidth * (item.from - this.chart.firstYear)) + 'px'
       };
     },
     exportChart() {
@@ -1004,7 +1054,7 @@ var app = new Vue({
     },
     shareChartToX() {
       this.exportChart();
-      let url = encodeURI('https://twitter.com/intent/tweet?text=サクセスリバー式キャリアチャートを作ってみたよ！\n→ ' + this.exportedChartURL + '\n\n@yukimatJP&hashtags=SuccessRiverAcademicCareerChartJS,サクセスリバー式キャリアチャート');
+      let url = encodeURI('https://x.com/intent/tweet?text=サクセスリバー式キャリアチャートを作ってみたよ！\n→ ' + this.exportedChartURL + '\n\n@yukimatJP&hashtags=SuccessRiverAcademicCareerChartJS,サクセスリバー式キャリアチャート');
       window.open(url, "_blank");
     },
     embedChart() {
@@ -1021,6 +1071,67 @@ var app = new Vue({
       this.exportChart();
       this.exportedChartURL = this.exportedChartURL.replace('?chart=', '?print&chart=');
       window.open(this.exportedChartURL, "_blank");
+    },
+    buildPrintOpenUrl() {
+      this.exportChart();
+      return this.exportedChartURL.replace('?chart=', '?print&chart=');
+    },
+    exportHTML() {
+      const src = document.querySelector(".career-chart-container");
+      const sc = document.querySelector(".career-chart");
+      if (!src || !sc) return alert("チャートが表示されていないため、HTMLを書き出せません。");
+
+      const clone = src.cloneNode(true);
+
+      // UI部品はHTMLから落とす
+      ["header","footer",".file-select-container",".chart-setting-container",".career-chart-container h2",".export-chart"]
+        .forEach(sel => clone.querySelectorAll(sel).forEach(n => n.remove()));
+
+      // Vueの属性は静的HTMLでは不要
+      const rmAttrs = ["v-if","v-else","v-else-if","v-for","v-model","v-html",":class",":style",":id",":for","@click","@scroll","@change","@input"];
+      clone.querySelectorAll("*").forEach(el => rmAttrs.forEach(a => el.hasAttribute(a) && el.removeAttribute(a)));
+
+      const wrap = document.createElement("div");
+      wrap.className = "app print";
+      wrap.appendChild(clone);
+
+      const cs = getComputedStyle(document.documentElement);
+      const col = (cs.getPropertyValue("--col-width") || "50px").trim() || "50px";
+      const row = (cs.getPropertyValue("--row-width") || "50px").trim() || "50px";
+      const pos0 = (cs.getPropertyValue("--chart-header-position") || "").trim();
+      const pos = pos0 || ((sc.scrollLeft || 0) + "px");
+      const vars = `:root{--col-width:${col};--row-width:${row};--chart-header-position:${pos};}`;
+
+      const tmpDoc = document.implementation.createHTMLDocument("tmp");
+      const st = tmpDoc.createElement("style");
+      st.textContent = Array.from(document.querySelectorAll("style")).map(s => s.textContent || "").join("\n");
+      tmpDoc.head.appendChild(st);
+
+      const tmpRoot = tmpDoc.createElement("div");
+      tmpRoot.innerHTML = wrap.outerHTML;
+      tmpDoc.body.appendChild(tmpRoot);
+
+      const css = pruneCSS(tmpDoc, tmpRoot);
+      const extra = "html,body{margin:0;padding:0} .app.print .career-chart-container{padding:0!important} .app.print .career-chart{width:100vw;border:none}";
+
+      const formatDom = (s) => {
+        s = s.replace(/<\/([a-zA-Z0-9:-]+)>\s*</g, "</$1>\n<");
+        s = s.replace(/\n{2,}/g, "\n");
+        return s.trim();
+      };
+
+      const body = formatDom(wrap.outerHTML).trim() + "\n";
+      const html = `<!doctype html><html lang="ja"><!--  Author: Yuki Matsuda @yukimatJP //--><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AcademicCareerChart Export</title><style>${css}${vars}${extra}</style></head><body>${body}</body></html>`;
+
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "career-chart.html";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
     },
     importChart() {
       let d = this.importData.split('...');
@@ -1088,9 +1199,68 @@ var app = new Vue({
     }
   },
   computed: {
-    systemVersion: function() { return 'v1.3'; }
+    systemVersion: function() { return 'v1.4.1'; }
   }
 });
+
+function pruneCSS(doc, rootEl) {
+  const kept = [];
+  const keepBase = new Set([":root","html","body","*","*::before","*::after","*:before","*:after"]);
+
+  const split = s => s.split(",").map(x => x.trim()).filter(Boolean);
+  const stripPseudo = s => s
+    .replace(/::before|::after|:before|:after/gi, "")
+    .replace(/:hover|:active|:focus-visible|:focus|:visited|:link/gi, "")
+    .replace(/:disabled|:enabled|:checked|:target/gi, "")
+    .replace(/:first-child|:last-child|:nth-child\([^)]+\)/gi, "")
+    .replace(/:first-of-type|:last-of-type|:nth-of-type\([^)]+\)/gi, "")
+    .trim();
+
+  const match = (selectorText) => {
+    if (keepBase.has(selectorText)) return true;
+    for (const raw of split(selectorText)) {
+      if (keepBase.has(raw)) return true;
+      const s = stripPseudo(raw);
+      if (!s) return true;
+      try { if (rootEl.querySelector(s)) return true; }
+      catch (e) { return true; }
+    }
+    return false;
+  };
+
+  const handle = (rule) => {
+    const t = rule.type;
+    if (t === CSSRule.FONT_FACE_RULE || t === CSSRule.KEYFRAMES_RULE) return kept.push(rule.cssText);
+
+    if (t === CSSRule.MEDIA_RULE || t === (CSSRule.SUPPORTS_RULE || 12)) {
+      const inner = [];
+      for (const r of rule.cssRules) {
+        if (r.type === CSSRule.STYLE_RULE) { if (match(r.selectorText)) inner.push(r.cssText); }
+        else inner.push(r.cssText);
+      }
+      if (inner.length) {
+        const head = (t === CSSRule.MEDIA_RULE) ? `@media ${rule.conditionText}` : `@supports ${rule.conditionText}`;
+        kept.push(`${head}{${inner.join("")}}`);
+      }
+      return;
+    }
+
+    if (t === CSSRule.STYLE_RULE) { if (match(rule.selectorText)) kept.push(rule.cssText); return; }
+    kept.push(rule.cssText);
+  };
+
+  for (const sheet of Array.from(doc.styleSheets)) {
+    try {
+      const rules = sheet.cssRules;
+      if (!rules) continue;
+      for (const r of Array.from(rules)) handle(r);
+    } catch (e) {}
+  }
+
+  if (!kept.length) return Array.from(doc.querySelectorAll("style")).map(s => s.textContent || "").join("\n");
+  return kept.join("");
+}
+
 app.initialize();
 </script>
 </html>
