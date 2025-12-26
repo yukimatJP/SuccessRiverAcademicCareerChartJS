@@ -23,7 +23,7 @@
 }
 .app > header {
   position: fixed;
-  z-index: 3;
+  z-index: 100;
   top: 0;
   left: 0;
   width: 100vw;
@@ -148,9 +148,27 @@ section.career-chart-container {
   overflow-x: auto;
 }
 .career-chart-wrap {
+  position: relative;
   display: block;
-  margin: 30px 60px 20px;
+  margin: 30px 50px 20px;
   width: var(--row-width);
+  min-height: calc(100vh - 50px);
+}
+.year-background {
+  position: absolute;
+  top: 60px;
+  left: 0;
+  display: flex;
+  height: calc(100% - 60px);
+  z-index: 0; /* 背景に回す */
+  pointer-events: none;
+}
+.year-bg-cell {
+  width: calc(var(--col-width) - 4px);
+  margin-right: 4px; /* year-cell と揃える */
+}
+.year-bg-cell.even {
+  background: #f9f9f9;
 }
 .researcher-info,
 .achievement-chart,
@@ -159,6 +177,7 @@ section.career-chart-container {
 .year-chart {
   padding: 10px 0;
   position: relative;
+  z-index: 10;
 }
 .career-chart h3 {
   display: block;
@@ -174,7 +193,7 @@ section.career-chart-container {
   content: '';
   position: absolute;
   top: 0;
-  left: -15px;
+  left: -10px;
   height: 100%;
   width: 2px;
   border: 1px dotted #ddd;
@@ -187,10 +206,15 @@ section.career-chart-container {
 .edujob-chart h3             { color:        #4668a5; }
 .edujob-chart h3:before      { border-color: #739fee; }
 .researcher-info {
-  margin: 0 0 10px;
-  height: 50px;
+  margin: 0;
+  height: 60px;
 }
-.researcher-info h3 span {
+.career-chart h3 span {
+  display: inline-block;
+  background: white;
+  padding: 3px 10px;
+}
+.researcher-info h3 p {
   display: block;
   font-size: 0.8em;
   font-weight: normal;
@@ -254,17 +278,28 @@ section.career-chart-container {
   display: block;
   width: calc(var(--col-width) - 4px);
   margin: 0 4px 0 0;
-  padding: 5px 0 0;
+  padding: 5px 0;
   font-size: 0.8em;
   line-height: 1em;
   text-align: center;
   border: 1px solid #999;
+}
+.year-cell.even {
+  border: 1px solid #666;
+}
+.year-chart.top .year-cell {
+  border-width: 0 0 5px;
+}
+.year-chart.bottom .year-cell {
   border-width: 5px 0 0;
 }
 .year-cell.now {
   width: calc(var(--col-width) * 2);
   border: 1px solid #ccc;
   border-width: 5px 0 0;
+}
+.year-cell.now span {
+  visibility: hidden;
 }
 .export-chart ul {
   padding: 0;
@@ -429,18 +464,31 @@ footer .content {
   <div class="career-chart-empty" v-if="!chart.latestYear"><label for="researchmap-file-input">ファイルを選択してください</label></div>
   <div class="career-chart" v-if="chart.latestYear" @scroll="onScrollChart">
     <div class="career-chart-wrap" id="career-chart-wrap">
+      <div class="year-background">
+        <div
+          class="year-bg-cell"
+          v-for="i in (chart.latestYear - chart.firstYear + 1)"
+          :class="{ even: ((chart.latestYear - (chart.firstYear + i - 1)) % 2 === 0) }">
+        </div>
+      </div>
       <div class="researcher-info">
-        <h3>
+        <h3><span>
           ${ researcher.name.display }
-          <span>${ researcher.affiliation.display }</span>
-        </h3>
+          <p>${ researcher.affiliation.display }</p>
+        </span></h3>
+      </div>
+      <div class="year-chart top clearfix">
+        <span class="year-cell"
+              v-for="i in (chart.latestYear - chart.firstYear + 1)"
+              :class="{ even: ((chart.latestYear - (chart.firstYear + i - 1)) % 2 === 0) }">${ chart.firstYear + i - 1}</span>
+        <span class="year-cell now"><span>未来</span></span>
       </div>
       <div class="achievement-chart">
         <div class="achievement-row"
              v-for="type in achievementTypeList"
              v-if="chart.settings.visibility[type]"
              :style="{height: (30 + 6 * getAchievementRowHeight(type)) + 'px'}">
-          <h3>${ achievementNameList[type] }</h3>
+          <h3><span>${ achievementNameList[type] }</span></h3>
           <div class="achievement-col"
                v-for="(col, i) in chart.achievements[type]">
             <span class="achievement-cell"></span>
@@ -451,7 +499,7 @@ footer .content {
         </div>
       </div>
       <div class="grant-chart">
-        <h3>予算獲得状況</h3>
+        <h3><span>予算獲得状況</span></h3>
         <div class="grant-row"
              v-for="(row, i) in chart.grants.slice().reverse()">
           <span class="grant-cell"
@@ -463,7 +511,7 @@ footer .content {
         </div>
       </div>
       <div class="edujob-chart">
-        <h3>学歴・職歴</h3>
+        <h3><span>学歴・職歴</span></h3>
         <div class="edujob-row"
              v-for="(row, i) in chart.educationsAndJobs.slice().reverse()">
           <span class="edujob-cell"
@@ -474,10 +522,11 @@ footer .content {
           </span>
         </div>
       </div>
-      <div class="year-chart clearfix">
+      <div class="year-chart bottom clearfix">
         <span class="year-cell"
-              v-for="i in (chart.latestYear - chart.firstYear + 1)">${ chart.firstYear + i - 1}</span>
-        <span class="year-cell now"></span>
+              v-for="i in (chart.latestYear - chart.firstYear + 1)"
+              :class="{ even: ((chart.latestYear - (chart.firstYear + i - 1)) % 2 === 0) }">${ chart.firstYear + i - 1}</span>
+        <span class="year-cell now"><span>未来</span></span>
       </div>
     </div>
   </div>
@@ -508,6 +557,10 @@ footer .content {
     </p>
     <h2>◇ リリースノート</h2>
     <ul class="release-note">
+      <li>
+        2025/12/26 (v1.3)<br>
+        年表示をチャートの上部に表示し、交互に背景色をつけることで、縦に長いチャートでも見やすくなりました。
+      </li>
       <li>
         2023/08/20 (v1.2.1)<br>
         英語表記のみの学歴・職歴・予算への対応、年月日の設定のないデータに対するエラーハンドリング。
@@ -1035,7 +1088,7 @@ var app = new Vue({
     }
   },
   computed: {
-    systemVersion: function() { return 'v1.2.1'; }
+    systemVersion: function() { return 'v1.3'; }
   }
 });
 app.initialize();
