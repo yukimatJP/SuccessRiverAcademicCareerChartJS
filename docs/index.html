@@ -104,15 +104,15 @@ section.chart-setting-container dl dt {
   float: left;
   width: 100px;
   padding: 5px 0;
-  min-height: 30px;
+  min-height: 36px;
 }
 section.chart-setting-container dl dd {
   margin: 0 0 0 100px;
   padding: 5px 0;
-  min-height: 30px;
+  min-height: 36px;
 }
 section.chart-setting-container dl dd ul {
-  margin: 0;
+  margin: 0 0 -5px;
   padding: 0;
 }
 section.chart-setting-container dl dd ul li {
@@ -253,7 +253,7 @@ section.career-chart-container {
   z-index: 2;
   display: flex;
   height: 25px;
-  padding: 0 0 3px;
+  padding: 0 2px 3px;
   font-size: 0.8em;
   line-height: 1em;
   border: 1px solid orange;
@@ -271,6 +271,20 @@ section.career-chart-container {
   align-self: flex-end;
   text-align: left;
   white-space: nowrap;
+}
+.grant-cell:hover,
+.edujob-cell:hover {
+  overflow: visible;
+  z-index: 10;
+  cursor: pointer;
+  font-weight: bold;
+  border-color: #f60;
+  color: #f60;
+}
+.grant-cell:hover span,
+.edujob-cell:hover span {
+  background: white;
+  box-shadow: 0 0 0 2px white;
 }
 .year-cell {
   float: left;
@@ -441,7 +455,7 @@ footer .content {
              @input="updateCellWidth">
       ${ chart.settings.cellWidth }px
     </dd>
-    <dt>表示項目</dt>
+    <dt>研究業績</dt>
     <dd>
       <ul class="clearfix">
         <li v-for="(item, type) in achievementNameList">
@@ -452,6 +466,7 @@ footer .content {
         </li>
       </ul>
     </dd>
+    <dt>獲得予算</dt>
     <dd>
       <ul class="clearfix">
         <li>
@@ -564,6 +579,9 @@ footer .content {
     </p>
     <h2>◇ リリースノート</h2>
     <ul class="release-note">
+      <li>
+        2025/12/31 (v1.4.2)<br>
+        獲得予算・経歴の表示を修正、ホバー時に隠れたテキストが表示されるようになりました。
       <li>
         2025/12/27 (v1.4.1)<br>
         researchmapファイルを選び直したときのバグを修正。
@@ -752,10 +770,12 @@ var app = new Vue({
         let edu = this.rmJson.education[i];
         let yearFrom = this.getFinancialYear(edu.from_date);
         let yearTo   = this.getFinancialYear(edu.to_date);
-        let eduName  = '';
-        if('course' in edu) eduName = this.getEduName(edu.course);
-        if(eduName == '' && 'department' in edu) eduName = this.getEduName(edu.department);
-        this.career.educationsAndJobs.push({yearFrom, yearTo, name:eduName, isEdu:true});
+        let eduAffiliation = this.getEduAffiliation(edu.affiliation);
+        let eduName = [];
+        if('department' in edu) eduName.push(this.getEduName(edu.department));
+        if('course' in edu) eduName.push(this.getEduName(edu.course));
+        if(eduAffiliation != '') eduName.push("（" + eduAffiliation + "）");
+        this.career.educationsAndJobs.push({yearFrom, yearTo, name:eduName.join(" "), isEdu:true});
         this.updateCareerPeriod(yearFrom.year, yearTo.year);
       }
       // Job History
@@ -836,15 +856,22 @@ var app = new Vue({
       if(this.chart.firstYear  > yearFrom) { this.chart.firstYear  = yearFrom; }
       if(this.chart.latestYear < yearTo  ) { this.chart.latestYear = Math.min(new Date().getFullYear(), yearTo); }
     },
+    getEduAffiliation(edu) {
+      if('ja' in edu) {
+        return edu.ja;
+      } else if('en' in edu) {
+        return edu.en;
+      }
+    },
     getEduName(edu) {
       if('ja' in edu) {
-        if     (edu.ja.includes("修士"))       { return '修士課程'; }
-        else if(edu.ja.includes("修士課程"))    { return '修士課程'; }
-        else if(edu.ja.includes("博士前期課程")) { return '博士前期課程'; }
-        else if(edu.ja.includes("博士後期課程")) { return '博士後期課程'; }
-        else if(edu.ja.includes("博士課程"))    { return '博士課程'; }
-        else if(edu.ja.includes("博士"))       { return '博士課程'; }
-        else if(edu.ja.includes("研究科"))     { return '大学院'; }
+        // if     (edu.ja.includes("修士"))       { return '修士課程'; }
+        // else if(edu.ja.includes("修士課程"))    { return '修士課程'; }
+        // else if(edu.ja.includes("博士前期課程")) { return '博士前期課程'; }
+        // else if(edu.ja.includes("博士後期課程")) { return '博士後期課程'; }
+        // else if(edu.ja.includes("博士課程"))    { return '博士課程'; }
+        // else if(edu.ja.includes("博士"))       { return '博士課程'; }
+        // else if(edu.ja.includes("研究科"))     { return '大学院'; }
         return edu.ja;
       } else if('en' in edu) {
         return edu.en;
@@ -852,30 +879,48 @@ var app = new Vue({
     },
     getJobName(job) {
       let lang = ('ja' in job.job) ? 'ja' : 'en';
+      let jobName = "";
+      let jobAffiliation = [];
       if('affiliation' in job) {
-        jobName = job.affiliation[lang] + "・" + job.job[lang];
-      } else {
-        jobName = job.job[lang];
+        jobAffiliation.push(this.getOrgAbbreviation(job.affiliation[lang]));
+      }
+      if('section' in job) {
+        jobAffiliation.push(job.section[lang]);
+      }
+      if('job' in job) {
+        jobName = job.job[lang] + " （" + jobAffiliation.join(" ") + ")";
       }
 
-      if(lang == 'ja' && jobName.includes("日本学術振興会")) {
+      if(lang == 'ja' && jobName.includes("JSPS")) {
         jobName = jobName.includes("DC1") ? "学振DC1"
                 : jobName.includes("DC2") ? "学振DC2"
                 : jobName.includes("RPD") ? "学振RPD"
                 : jobName.includes("SPD") ? "学振SPD"
-                : jobName.includes("PD")  ? "学振PD"  : 'その他';
+                : jobName.includes("PD")  ? "学振PD"  : jobName;
       }
       return jobName;
     },
     getGrantName(grant) {
       let grantName = '';
-      if('category' in grant) {
-        grantName = grant.category[('ja' in grant.category) ? 'ja' : 'en'];
-      }
-      if(grantName == '' && 'system_name' in grant) {
-        grantName = grant.system_name[('ja' in grant.system_name) ? 'ja' : 'en'];
+      if(grantName == '' && 'offer_organization' in grant) {
+        let grantOrg = grant.offer_organization[('ja' in grant.offer_organization) ? 'ja' : 'en'];
+        grantName = this.getOrgAbbreviation(grantOrg);
+        if('category' in grant) {
+          grantName += "&nbsp;" + grant.category[('ja' in grant.category) ? 'ja' : 'en'];
+        } else if('system_name' in grant) {
+          grantName += "&nbsp;" + grant.system_name[('ja' in grant.system_name) ? 'ja' : 'en'];
+        }
       }
       return grantName;
+    },
+    getOrgAbbreviation(org) {
+      if(org.indexOf("科学技術振興機構") > -1) return "JST";
+      if(org.indexOf("日本学術振興会") > -1 || org.indexOf("学振") > -1) return "JSPS";
+      if(org.indexOf("新エネルギー・産業技術総合開発機構") > -1) return "NEDO";
+      if(org.indexOf("日本医療研究開発機構") > -1) return "AMED";
+      if(org.indexOf("情報通信研究機構") > -1) return "NICT";
+      if(org.indexOf("理化学研究所") > -1) return "RIKEN";
+      return org;
     },
     plotCareerHistory() {
       // set CSS property

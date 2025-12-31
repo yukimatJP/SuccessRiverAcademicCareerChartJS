@@ -17,6 +17,8 @@ Githubリポジトリ： <a href="https://github.com/yukimatJP/SuccessRiverAcade
 
 ## Release Note
 
+- 2025/12/31 (v1.4.2)  
+  獲得予算・経歴の表示を修正、ホバー時に隠れたテキストが表示されるようになりました。
 - 2025/12/27 (v1.4.1)  
   researchmapファイルを選び直したときのバグを修正。
 - 2025/12/27 (v1.4)  
