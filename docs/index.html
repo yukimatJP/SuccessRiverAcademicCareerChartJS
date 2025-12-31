@@ -255,7 +255,7 @@ section.career-chart-container {
 .career-chart h3 {
   display: block;
   position: absolute;
-  z-index: 0;
+  z-index: 20;
   top: 0;
   left: calc(var(--chart-header-position) - 10px);
   width: 300px;
@@ -366,9 +366,9 @@ section.career-chart-container {
   box-shadow: 0 0 0 2px white;
 }
 .career-event-chart {
-  padding: 10px 0;
   position: relative;
   z-index: 10;
+  padding: 10px 0;
 }
 .career-event-chart .career-event-row {
   position: relative;
@@ -377,7 +377,7 @@ section.career-chart-container {
 }
 .career-event-chart .career-event-cell {
   position: absolute;
-  z-index: 2;
+  z-index: 9;
   display: inline-flex;
   align-items: center;
   height: 24px;
@@ -388,7 +388,6 @@ section.career-chart-container {
   background: white;
   box-shadow: 0 0 0 4px white;
   overflow-y: visible;
-  z-index: 9;
 }
 .career-event-chart .career-event-cell:before {
   content: "";
@@ -569,8 +568,8 @@ footer .content {
   <h2>② キャリアイベントを登録</h2>
   <div class="career-event-form">
     <div class="career-event-row" v-for="(event, idx) in career.events" :key="idx">
-      <input type="month" v-model="event.date" @input="saveCareerEvents">
-      <input type="text" v-model="event.content" placeholder="イベント内容を入力" @input="saveCareerEvents">
+      <input type="month" v-model="event.date" @blur="saveCareerEvents">
+      <input type="text" v-model="event.content" placeholder="イベント内容を入力" @blur="saveCareerEvents">
       <button type="button"
               class="career-event-remove"
               @click="removeCareerEventRow(idx)">削除</button>
@@ -1076,9 +1075,9 @@ var app = new Vue({
       if(targetDate == "9999" || targetDate == undefined || targetDate == null) {
         return {year:new Date().getFullYear()+1, month:isFrom ? 4 : 3};
       }
-      dt = targetDate.split('-');
-      year  = (dt.length > 0) ? parseInt(dt[0]) : new Date().getFullYear();
-      month = (dt.length > 1) ? parseInt(dt[1]) : isFrom ? 4 : 3;
+      let dt = targetDate.split('-');
+      let year  = (dt.length > 0) ? parseInt(dt[0]) : new Date().getFullYear();
+      let month = (dt.length > 1) ? parseInt(dt[1]) : isFrom ? 4 : 3;
       return {'year': year, 'month': month}
     },
     updateCareerPeriod(yearFrom, yearTo) {
@@ -1197,8 +1196,8 @@ var app = new Vue({
           content: (e && typeof e.content === "string") ? e.content : ""
         }));
 
-        // 0件なら最低1行
         this.career.events = normalized.length ? normalized : [{ date: "", content: "" }];
+        this.sortCareerEvents();
       } catch (e) {
         console.warn("Failed to load career events:", e);
       }
@@ -1206,6 +1205,8 @@ var app = new Vue({
     plotCareerChart() {
       // set CSS property
       this.updateCellWidth();
+      // check data
+      if(this.career.educationsAndJobs.length == 0 && this.career.grants.length == 0) return;
       // Education and Job History
       let edujob = this.career.educationsAndJobs.sort((a, b) => a.yearFrom.year - b.yearFrom.year);
       for(let i=0; i<edujob.length; i++) {
@@ -1309,7 +1310,7 @@ var app = new Vue({
       const dt = String(e.date).split("-");
       const y = (dt.length > 0) ? parseInt(dt[0]) : new Date().getFullYear();
       const m = (dt.length > 1) ? parseInt(dt[1]) : 1;
-      const pos = parseFloat((y + (m / 12.0)).toFixed(2));
+      const pos = parseFloat((y + ((m - 1) / 12.0)).toFixed(2));
       const mm = String(m).padStart(2, "0");
       const label = (e.content && e.content !== "") ? e.content : "";
       return {
