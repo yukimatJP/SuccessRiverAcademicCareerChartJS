@@ -438,7 +438,7 @@ footer .content {
     <input type="file" id="researchmap-file-input" @change="selectResearchmapFile"></li>
   </div>
   <div v-else>
-    <p class="selected-file-name" @click="clearCareerHistory">
+    <p class="selected-file-name" @click="clearCareerChart">
       ${ rmFile.name }
       <span>ファイルを変更する</span>
     </p>
@@ -461,7 +461,8 @@ footer .content {
         <li v-for="(item, type) in achievementNameList">
           <input type="checkbox"
                  :id="'disp-setting-achievement' + type"
-                 v-model="chart.settings.visibility[type]">
+                 v-model="chart.settings.visibility[type]"
+                 @change="replotCareerChart">
           <label :for="'disp-setting-achievement' + type">${ item }</label>
         </li>
       </ul>
@@ -470,7 +471,8 @@ footer .content {
       <ul class="clearfix">
         <li>
           <input type="checkbox" id="disp-setting-achievement-not-first-and-corresp"
-                 v-model="chart.settings.visibility.notFirstCorrespAchievement">
+                 v-model="chart.settings.visibility.notFirstCorrespAchievement"
+                 @change="replotCareerChart">
           <label for="disp-setting-achievement-not-first-and-corresp">主著・責任著者以外の業績</label>
         </li>
       </ul>
@@ -481,7 +483,7 @@ footer .content {
         <li>
           <input type="checkbox" id="disp-setting-grants-notPI"
                  v-model="chart.settings.visibility.notPIgrants"
-                 @change="replotCareerHistory">
+                 @change="replotCareerChart">
           <label for="disp-setting-grants-notPI">代表研究者以外の予算</label>
         </li>
     </dd>
@@ -580,6 +582,10 @@ footer .content {
       「SuccessRiver AcademicCareerChart (${ systemVersion })」は、<a href="https://x.com/rei_nari">@rei_nari</a>さん考案のキャリアイベント図をresearchmapに登録された情報から生成します。
     </p>
     <p>
+      このシステムは、各種設定の一時保存のため LocalStorage を使用します。
+    </p>
+    <h2>◆ 開発に関する情報</h2>
+    <p>
       <b>Githubリポジトリ</b>： <a href="https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS">https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS</a>
     </p>
     <p>
@@ -589,6 +595,9 @@ footer .content {
     </p>
     <h2>◇ リリースノート</h2>
     <ul class="release-note">
+      <li>
+        2025/12/31 (v1.5)<br>
+        表示オプションを LocalStorage に保存するようにしました。
       <li>
         2025/12/31 (v1.4.3)<br>
         主著・責任著者以外の業績を表示するかどうかのオプションを追加しました。
@@ -623,6 +632,7 @@ footer .content {
 <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
+const DISPLAY_OPTION_LS_KEY = "CareerChartDisplayOptions";
 
 const JSONL = {
   parse: (jsonl) => {
@@ -694,6 +704,7 @@ var app = new Vue({
   },
   methods: {
     initialize: function() {
+      this.loadDisplayOptions();
       let params = new URLSearchParams(window.location.search);
       if(params.has('chart')) {
         this.isSharingMode = true;
@@ -704,22 +715,65 @@ var app = new Vue({
       if(params.has('print')) this.isPrintingMode = true;
     },
     resetPage: function() {
-      this.clearCareerHistory();
+      this.clearCareerChart();
       window.location.search = '';
     },
+    saveDisplayOptions: function() {
+      try {
+        const payload = {
+          cellWidth: Number(this.chart.settings.cellWidth),
+          visibility: {
+            journal:      Boolean(this.chart.settings.visibility.journal),
+            intlConf:     Boolean(this.chart.settings.visibility.intlConf),
+            domesticConf: Boolean(this.chart.settings.visibility.domesticConf),
+            notFirstCorrespAchievement: Boolean(this.chart.settings.visibility.notFirstCorrespAchievement),
+            notPIgrants:  Boolean(this.chart.settings.visibility.notPIgrants),
+          }
+        };
+        localStorage.setItem(DISPLAY_OPTION_LS_KEY, JSON.stringify(payload));
+      } catch (e) {
+        console.warn("Failed to save display options:", e);
+      }
+    },
+    loadDisplayOptions: function() {
+      try {
+        const raw = localStorage.getItem(DISPLAY_OPTION_LS_KEY);
+        if (!raw) return;
+
+        const data = JSON.parse(raw);
+        if (!data || typeof data !== "object") return;
+
+        if (typeof data.cellWidth === "number" && isFinite(data.cellWidth)) {
+          const cw = Math.min(200, Math.max(30, Math.round(data.cellWidth)));
+          this.chart.settings.cellWidth = cw;
+        }
+
+        if (data.visibility && typeof data.visibility === "object") {
+          const v = data.visibility;
+          const vis = this.chart.settings.visibility;
+          if ("journal" in v)      vis.journal = Boolean(v.journal);
+          if ("intlConf" in v)     vis.intlConf = Boolean(v.intlConf);
+          if ("domesticConf" in v) vis.domesticConf = Boolean(v.domesticConf);
+          if ("notFirstCorrespAchievement" in v) vis.notFirstCorrespAchievement = Boolean(v.notFirstCorrespAchievement);
+          if ("notPIgrants" in v)  vis.notPIgrants = Boolean(v.notPIgrants);
+        }
+      } catch (e) {
+        console.warn("Failed to load display options:", e);
+      }
+    },
     selectResearchmapFile: function(e) {
-      this.clearCareerHistory();
+      this.clearCareerChart();
       const files = e.target.files || e.dataTransfer.files;
       this.rmFile = (files[0].name.split('.').pop() == 'jsonl') ? files[0] : null;
       var reader = new FileReader();
       reader.readAsText(this.rmFile);
       reader.onload = () => {
         this.rmJson = JSONL.parse(reader.result);
-        this.parseCareerHistory();
-        this.plotCareerHistory();
+        this.parseCareerData();
+        this.plotCareerChart();
       };
     },
-    clearCareerHistory: function() {
+    clearCareerChart: function() {
       this.rmFile = null;
       this.rmJson = null;
 
@@ -745,12 +799,7 @@ var app = new Vue({
       this.chart.firstYear = new Date().getFullYear();
       this.chart.latestYear = 0;
 
-      this.chart.settings.cellWidth = 50;
-      this.chart.settings.visibility.journal = true;
-      this.chart.settings.visibility.intlConf = true;
-      this.chart.settings.visibility.domesticConf = true;
-      this.chart.settings.visibility.notFirstCorrespAchievement = true;
-      this.chart.settings.visibility.notPIgrants = true;
+      this.loadDisplayOptions();
 
       this.chart.educationsAndJobs = [];
       this.chart.grants = [];
@@ -764,7 +813,7 @@ var app = new Vue({
       const sc = document.querySelector(".career-chart");
       if (sc) sc.scrollLeft = 0;
     },
-    parseCareerHistory() {
+    parseCareerData() {
       // Basic Info
       if('researchers' in this.rmJson) {
         let researcher = this.rmJson.researchers[0];
@@ -937,7 +986,7 @@ var app = new Vue({
       if(org.indexOf("理化学研究所") > -1) return "RIKEN";
       return org;
     },
-    plotCareerHistory() {
+    plotCareerChart() {
       // set CSS property
       this.updateCellWidth();
       // Education and Job History
@@ -999,7 +1048,9 @@ var app = new Vue({
         }
       }
     },
-    replotCareerHistory() {
+    replotCareerChart() {
+      // save display options
+      this.saveDisplayOptions();
       // reset plot data
       this.chart.educationsAndJobs = [];
       this.chart.grants = [];
@@ -1008,7 +1059,7 @@ var app = new Vue({
               intlConf:     [],
               domesticConf: [],
             };
-      this.plotCareerHistory();
+      this.plotCareerChart();
     },
     getEducationAndJobItem(item) {
       return {
@@ -1027,6 +1078,9 @@ var app = new Vue({
       };
     },
     updateCellWidth() {
+      // save display options
+      this.saveDisplayOptions();
+      // update cell width
       let root = document.documentElement;
       root.style.setProperty('--col-width', this.chart.settings.cellWidth + "px");
       root.style.setProperty('--row-width', this.chart.settings.cellWidth * (4 + this.chart.latestYear - this.chart.firstYear) + "px");
@@ -1258,11 +1312,11 @@ var app = new Vue({
         }
       }
       this.updateCellWidth();
-      this.replotCareerHistory();
+      this.replotCareerChart();
     }
   },
   computed: {
-    systemVersion: function() { return 'v1.4.3'; }
+    systemVersion: function() { return 'v1.5'; }
   }
 });
 
