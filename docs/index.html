@@ -385,19 +385,26 @@ section.career-chart-container {
   font-size: 0.85em;
   line-height: 1em;
   white-space: nowrap;
-  background: rgba(255,255,255,0.95);
-  border-left: 1px solid #999;
-  overflow: hidden;
+  background: white;
+  box-shadow: 0 0 0 4px white;
+  overflow-y: visible;
+  z-index: 9;
+}
+.career-event-chart .career-event-cell:before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 50px;
+  border-left: 2px solid #666;
 }
 .career-event-chart .career-event-cell:hover {
   overflow: visible;
   z-index: 10;
   cursor: pointer;
   font-weight: bold;
-}
-.career-event-chart .career-event-cell:hover span {
-  background: white;
-  box-shadow: 0 0 0 2px white;
+  background: #666;
+  color: white;
 }
 .year-cell {
   float: left;
@@ -511,6 +518,7 @@ footer .content {
 .app.print header,
 .app.print footer,
 .app.print .file-select-container,
+.app.print .career-event-editor,
 .app.print .chart-setting-container,
 .app.print .career-chart-container h2,
 .app.print .export-chart {
@@ -565,8 +573,7 @@ footer .content {
       <input type="text" v-model="event.content" placeholder="イベント内容を入力" @input="saveCareerEvents">
       <button type="button"
               class="career-event-remove"
-              @click="removeCareerEventRow(idx)"
-              v-if="career.events.length > 1">削除</button>
+              @click="removeCareerEventRow(idx)">削除</button>
     </div>
     <button type="button" class="career-event-add" @click="addCareerEventRow">追加する</button>
   </div>
@@ -732,6 +739,9 @@ footer .content {
     </p>
     <h2>◇ リリースノート</h2>
     <ul class="release-note">
+      <li>
+        2025/12/31 (v1.6.1)<br>
+        キャリアイベントのURL出力・HTML出力に対応しました。
       <li>
         2025/12/31 (v1.6)<br>
         キャリアイベントを登録できるようにしました。
@@ -1146,8 +1156,11 @@ var app = new Vue({
       this.saveCareerEvents();
     },
     removeCareerEventRow: function(idx) {
-      if (this.career.events.length <= 1) return;
-      this.career.events.splice(idx, 1);
+      if (this.career.events.length <= 1) {
+        this.career.events = [{ date: "", content: "" }];
+      } else {
+        this.career.events.splice(idx, 1);
+      }
       this.saveCareerEvents();
     },
     sortCareerEvents: function () {
@@ -1169,6 +1182,7 @@ var app = new Vue({
       } catch (e) {
         console.warn("Failed to save career events:", e);
       }
+      this.replotCareerChart();
     },
     loadCareerEvents: function() {
       try {
@@ -1192,21 +1206,6 @@ var app = new Vue({
     plotCareerChart() {
       // set CSS property
       this.updateCellWidth();
-      // Career Events
-      this.chart.events = [];
-      const evs = (this.career.events || [])
-        .filter(e => e && (e.date || e.content))
-        .map(e => ({
-          date: (typeof e.date === "string") ? e.date.trim() : "",
-          content: (typeof e.content === "string") ? e.content.trim() : ""
-        }))
-        .filter(e => e.date !== "");
-      evs.sort((a, b) => a.date.localeCompare(b.date));
-      for (let i = 0; i < evs.length; i++) {
-        const it = this.getCareerEventItem(evs[i]);
-        this.chart.events.push(it);
-        this.updateCareerPeriod(it.year, it.year);
-      }
       // Education and Job History
       let edujob = this.career.educationsAndJobs.sort((a, b) => a.yearFrom.year - b.yearFrom.year);
       for(let i=0; i<edujob.length; i++) {
@@ -1265,6 +1264,21 @@ var app = new Vue({
           }
         }
       }
+      // Career Events
+      this.chart.events = [];
+      const evs = (this.career.events || [])
+        .filter(e => e && (e.date || e.content))
+        .map(e => ({
+          date: (typeof e.date === "string") ? e.date.trim() : "",
+          content: (typeof e.content === "string") ? e.content.trim() : ""
+        }))
+        .filter(e => e.date !== "");
+      evs.sort((a, b) => a.date.localeCompare(b.date));
+      for (let i = 0; i < evs.length; i++) {
+        const it = this.getCareerEventItem(evs[i]);
+        this.chart.events.push(it);
+        this.updateCareerPeriod(it.year, it.year);
+      }
     },
     replotCareerChart() {
       // save display options
@@ -1297,7 +1311,7 @@ var app = new Vue({
       const m = (dt.length > 1) ? parseInt(dt[1]) : 1;
       const pos = parseFloat((y + (m / 12.0)).toFixed(2));
       const mm = String(m).padStart(2, "0");
-      const label = (e.content && e.content !== "") ? (y + "/" + mm + " " + e.content) : (y + "/" + mm);
+      const label = (e.content && e.content !== "") ? e.content : "";
       return {
         year: y,
         pos: pos,
@@ -1377,6 +1391,22 @@ var app = new Vue({
         tmp = tmp.join('_').replaceAll('0-0', '').replaceAll('0', '');
         achvmnt.push(tmp);
       }
+      let events = [];
+      for (let i=0; i<(this.career.events || []).length; i++) {
+        const e = this.career.events[i] || {};
+        const date = (typeof e.date === "string") ? e.date.trim() : "";
+        const content = (typeof e.content === "string") ? e.content.trim() : "";
+        if(!date && !content) continue;
+
+        const dt = date.split("-");
+        const y = (dt.length > 0 && dt[0]) ? parseInt(dt[0]) : this.chart.firstYear;
+        const m = (dt.length > 1 && dt[1]) ? parseInt(dt[1]) : 1;
+        if(!isFinite(y) || !isFinite(m)) continue;
+
+        const pos = parseFloat(((y + (m / 12.0)) - 2000.0).toFixed(2));
+        events.push(pos);
+        events.push("__" + content + "__");
+      }
       let expJson = [
         // researcher info
         encodeURI(this.researcher.name.display),
@@ -1394,7 +1424,8 @@ var app = new Vue({
         // chart
         encodeURI(eaj),
         encodeURI(grants),
-        encodeURI(achvmnt)
+        encodeURI(achvmnt),
+        encodeURI(events),
       ];
       this.exportedChartURL = 'https://career-chart.yukimat.jp/?chart=' + expJson.map(encodeURIComponent).join('...');
       setTimeout(() => {
@@ -1545,12 +1576,37 @@ var app = new Vue({
           }
         }
       }
+      this.career.events = [{ date: "", content: "" }];
+      if(d.length >= 14 && d[13] && d[13] !== "undefined") {
+        try {
+          const ev = JSON.parse("[" + d[13].replaceAll('__', '"') + "]");
+          const restored = [];
+          for(let i=0; i<parseInt(ev.length/2); i++) {
+            const pos = parseFloat(ev[i*2]);
+            const raw = (ev[i*2 + 1] != null) ? String(ev[i*2 + 1]) : "";
+            if(!isFinite(pos)) continue;
+
+            const content = decodeURI(raw);
+            const t = pos + 2000.0;
+            const y = Math.floor(t);
+            let m = Math.round((t - y) * 12);
+            if(m <= 0)  m = 1;
+            if(m >= 12) m = 12;
+
+            const mm = String(m).padStart(2, "0");
+            restored.push({ date: `${y}-${mm}`, content });
+          }
+          this.career.events = restored.length ? restored : [{ date: "", content: "" }];
+        } catch(e) {
+          this.career.events = [{ date: "", content: "" }];
+        }
+      }
       this.updateCellWidth();
       this.replotCareerChart();
     }
   },
   computed: {
-    systemVersion: function() { return 'v1.6'; }
+    systemVersion: function() { return 'v1.6.1'; }
   }
 });
 

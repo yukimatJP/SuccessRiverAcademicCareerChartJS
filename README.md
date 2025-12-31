@@ -17,6 +17,8 @@ Githubリポジトリ： <a href="https://github.com/yukimatJP/SuccessRiverAcade
 
 ## Release Note
 
+- 2025/12/31 (v1.6.1)  
+  キャリアイベントのURL出力・HTML出力に対応しました。
 - 2025/12/31 (v1.6)  
   キャリアイベントを登録できるようにしました。
 - 2025/12/31 (v1.5)  
