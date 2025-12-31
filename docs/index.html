@@ -466,6 +466,15 @@ footer .content {
         </li>
       </ul>
     </dd>
+    <dd>
+      <ul class="clearfix">
+        <li>
+          <input type="checkbox" id="disp-setting-achievement-not-first-and-corresp"
+                 v-model="chart.settings.visibility.notFirstCorrespAchievement">
+          <label for="disp-setting-achievement-not-first-and-corresp">主著・責任著者以外の業績</label>
+        </li>
+      </ul>
+    </dd>
     <dt>獲得予算</dt>
     <dd>
       <ul class="clearfix">
@@ -513,6 +522,7 @@ footer .content {
             <span class="achievement-cell"></span>
             <span class="achievement-cell"
                   v-for="item in col"
+                  v-if="chart.settings.visibility.notFirstCorrespAchievement || item == 1"
                   :class="{'item-first-or-corresp': item == 1, 'item-other': item == 0}"></span>
           </div>
         </div>
@@ -579,6 +589,9 @@ footer .content {
     </p>
     <h2>◇ リリースノート</h2>
     <ul class="release-note">
+      <li>
+        2025/12/31 (v1.4.3)<br>
+        主著・責任著者以外の業績を表示するかどうかのオプションを追加しました。
       <li>
         2025/12/31 (v1.4.2)<br>
         獲得予算・経歴の表示を修正、ホバー時に隠れたテキストが表示されるようになりました。
@@ -662,6 +675,7 @@ var app = new Vue({
           journal:      true,
           intlConf:     true,
           domesticConf: true,
+          notFirstCorrespAchievement: true,
           notPIgrants:  true,
         }
       },
@@ -735,6 +749,7 @@ var app = new Vue({
       this.chart.settings.visibility.journal = true;
       this.chart.settings.visibility.intlConf = true;
       this.chart.settings.visibility.domesticConf = true;
+      this.chart.settings.visibility.notFirstCorrespAchievement = true;
       this.chart.settings.visibility.notPIgrants = true;
 
       this.chart.educationsAndJobs = [];
@@ -1022,6 +1037,9 @@ var app = new Vue({
     getAchievementRowHeight(type) {
       let maxLength = 0;
       for([year, achvmnt] of Object.entries(this.chart.achievements[type])) {
+        if(!this.chart.settings.visibility.notFirstCorrespAchievement) {
+          achvmnt = achvmnt.filter(n => n == 1);
+        }
         maxLength = Math.max(maxLength, achvmnt.length);
       }
       return maxLength;
@@ -1244,7 +1262,7 @@ var app = new Vue({
     }
   },
   computed: {
-    systemVersion: function() { return 'v1.4.1'; }
+    systemVersion: function() { return 'v1.4.3'; }
   }
 });
 
