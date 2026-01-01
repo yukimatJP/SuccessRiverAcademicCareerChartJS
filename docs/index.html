@@ -1,23 +1,81 @@
 <!DOCTYPE html>
+<!--
+  Author: Yuki Matsuda @yukimatJP,
+  License: CC-BY-NC 4.0 (https://creativecommons.org/licenses/by-nc/4.0/)
+//-->
 <html lang="ja">
 <meta charset="utf-8">
 <title>SuccessRiver AcademicCareerChart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=code,file_open,format_list_bulleted_add,close" rel="stylesheet" />
 <style>
 *,*::before,*::after{box-sizing:border-box}ul[class],ol[class]{padding:0}body,h1,h2,h3,h4,p,ul[class],ol[class],figure,blockquote,dl,dd{margin:0}html{scroll-behavior:smooth}body{min-height:100vh;text-rendering:optimizeSpeed;line-height:1.5}ul[class],ol[class]{list-style:none}a:not([class]){text-decoration-skip-ink:auto}img,picture{max-width:100%;display:block}article>*+*{margin-top:1em}input,button,textarea,select{font:inherit}@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important}}
 * {
   font-feature-settings: "palt";
-  font-family: sans-serif;
+  font-family: "Noto Sans JP", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+h1, h2, h3, h1 *, h2 *, h3 * {
+  font-weight: 600;
 }
 :root {
   --col-width: 50px;
   --row-width: 50px;
   --chart-header-position: 0px;
+  --color-blue: #007dc5;
+  --color-orange: #f7941e;
+  --color-red: #c41425;
+  --color-green: #479b96;
+  --color-purple: #762283;
 }
 .clearfix::after {
    content: "";
    display: block;
    clear: both;
 }
+.ic:before {
+  font-family: 'Material Symbols Outlined';
+  position: relative;
+  font-weight: 300;
+  font-style: normal;
+  font-size: 24px;
+  display: inline-block;
+  line-height: 0.75;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+}
+
+.ic-16:before {
+  font-size: 16px;
+  top: 2px;
+  padding-right: 4px;
+}
+
+.ic-20:before {
+  font-size: 20px;
+  top: 3px;
+  padding-right: 5px;
+}
+
+.ic-24:before {
+  font-size: 24px;
+  top: 4px;
+  padding-right: 6px;
+}
+
+.ic.ic-github:before    { content: "code"; top: 5px; }
+.ic.ic-file:before      { content: "file_open"; margin-left: -2px; }
+.ic.ic-add-event:before { content: "format_list_bulleted_add"; }
+.ic.ic-remove:before    { content: "close"; top: 3px; margin-left: -2px; }
+
 .app {
   overflow-x: hidden;
 }
@@ -27,14 +85,14 @@
   top: 0;
   left: 0;
   width: 100vw;
-  height: 40px;
+  height: 50px;
   background: #333;
 }
 .app > header h1 {
   float: left;
   font-size: 1.2em;
   line-height: 40px;
-  padding: 0 20px;
+  padding: 5px 20px;
   color: white;
 }
 .app > header nav ul {
@@ -47,39 +105,59 @@
 }
 .app > header nav ul li a {
   display: block;
-  padding: 10px;
-  line-height: 20px;
+  padding: 10px 20px;
+  line-height: 30px;
   color: white;
   text-decoration: none;
 }
+.app > section {
+  padding: 15px 30px 30px;
+}
 .app > section h2 {
-  font-size: 1.1em;
-  padding: 0 0 5px;
+  position: relative;
+  font-size: 1.2em;
+  margin: 0 0 10px;
+}
+.app > section h2:before {
+  content: "";
+  position: absolute;
+  left: -30px;
+  top: 0;
+  bottom: 0;
+  border: 1px solid #333;
+  border-width: 0 0 0 18px;
 }
 section.file-select-container {
   display: block;
-  margin: 40px 0 0;
-  padding: 20px 30px 30px;
-  background: #ddd;
+  margin: 50px 0 0;
+  background: white;
+  border: 1px dotted #ccc;
+  border-width: 0 0 1px;
+}
+section.file-select-container .file-select-buttons {
+  padding: 5px 0 0;
 }
 section.file-select-container input {
   display: none;
 }
 section.file-select-container label {
   display: inline-block;
-  padding: 10px 20px;
-  background: #bbb;
+  margin: 4px 16px;
+  padding: 7px 14px;
+  background: var(--color-blue);
+  color: white;
   border-radius: 5px;
   cursor: pointer;
 }
 section.file-select-container label:hover {
-  background: #aaa;
+  opacity: 0.7;
 }
 section.file-select-container p.selected-file-name {
   position: relative;
   display: inline-block;
-  padding: 10px 200px 10px 20px;
-  background: #bbb;
+  padding: 7px 200px 7px 14px;
+  margin: 4px 16px;
+  background: #ddd;
   border-radius: 5px;
   cursor: pointer;
 }
@@ -91,18 +169,17 @@ section.file-select-container p.selected-file-name span {
   right: 0;
   top: 0;
   height: 100%;
-  padding: 10px 20px;
-  background: #666;
+  padding: 7px 14px;
+  background: var(--color-blue);
   border-radius: 0 5px 5px 0;
   color: white;
 }
 section.career-event-editor {
-  padding: 16px 30px;
   background: white;
-  border-top: 1px solid #ddd;
+  border: 1px dotted #ccc;
+  border-width: 0 0 1px;
 }
 section.career-event-editor h2 {
-  font-size: 1.1em;
   margin-bottom: 10px;
 }
 section.career-event-editor .career-event-form {
@@ -112,7 +189,7 @@ section.career-event-editor .career-event-form {
 }
 section.career-event-editor .career-event-row {
   display: grid;
-  grid-template-columns: 180px 1fr 96px;
+  grid-template-columns: 150px 1fr 70px;
   align-items: center;
   gap: 8px 10px;
   padding: 3px 10px;
@@ -121,8 +198,8 @@ section.career-event-editor .career-event-row {
   background: white;
 }
 section.career-event-editor .career-event-row input[type="month"] {
-  width: 180px;
-  min-width: 180px;
+  width: 150px;
+  min-width: 150px;
   height: 33px;
   padding: 3px 8px;
   font-size: 0.95em;
@@ -140,24 +217,24 @@ section.career-event-editor .career-event-row input[type="text"] {
 }
 section.career-event-editor .career-event-remove {
   justify-self: end;
-  padding: 6px 10px;
+  padding: 5px 10px;
   font-size: 0.8em;
-  color: #a33;
-  background: #fff;
-  border: 1px solid #e3bcbc;
+  color: white;
+  background: var(--color-red);
+  border: none;
   border-radius: 6px;
   cursor: pointer;
   white-space: nowrap;
 }
 section.career-event-editor .career-event-remove:hover {
-  background: #ffecec;
-  border-color: #d88;
+  opacity: 0.7;
 }
 section.career-event-editor .career-event-add {
   align-self: flex-start;
-  margin-top: 2px;
+  margin: 16px 16px 4px;
   padding: 7px 14px;
-  background: #bbb;
+  background: var(--color-blue);
+  color: white;
   border: none;
   border-radius: 5px;
   cursor: pointer;
@@ -171,8 +248,15 @@ section.career-event-editor input:focus {
   box-shadow: 0 0 0 2px rgba(107,130,255,0.2);
 }
 section.chart-setting-container {
-  padding: 20px 30px;
-  background: #eee;
+  border: 1px dotted #ccc;
+  border-width: 0 0 1px;
+}
+section.chart-setting-container input[type="range"],
+section.chart-setting-container input[type="checkbox"]  {
+  accent-color: var(--color-blue);
+}
+section.chart-setting-container dl {
+  margin: 0 0 0 10px;
 }
 section.chart-setting-container dl dt {
   float: left;
@@ -195,7 +279,6 @@ section.chart-setting-container dl dd ul li {
   margin: 0 20px 0 0;
 }
 section.career-chart-container {
-  padding: 20px 30px 30px;
 }
 .career-chart-empty {
   border: 1px solid #ddd;
@@ -272,12 +355,12 @@ section.career-chart-container {
   border: 1px dotted #ddd;
   border-width: 0 0 0 2px;
 }
-.achievement-chart h3        { color:        #7a28a3; }
-.achievement-chart h3:before { border-color: #d6adea; }
-.grant-chart h3              { color:        #1b6f1b; }
-.grant-chart h3:before       { border-color: #a6d0a6; }
-.edujob-chart h3             { color:        #4668a5; }
-.edujob-chart h3:before      { border-color: #739fee; }
+.achievement-chart h3        { color:        var(--color-purple); opacity: 0.9; }
+.achievement-chart h3:before { border-color: var(--color-purple); opacity: 0.6; }
+.grant-chart h3              { color:        var(--color-green); opacity: 1; }
+.grant-chart h3:before       { border-color: var(--color-green); opacity: 0.7; }
+.edujob-chart h3             { color:        var(--color-blue); opacity: 1; }
+.edujob-chart h3:before      { border-color: var(--color-blue); opacity: 0.7; }
 
 .career-chart h3 span {
   display: inline-block;
@@ -318,8 +401,8 @@ section.career-chart-container {
   margin: 1px 0 0;
   align-self: flex-end;
 }
-.achievement-cell.item-first-or-corresp { background: #ad5ad6; }
-.achievement-cell.item-other            { background: #d6adea; }
+.achievement-cell.item-first-or-corresp { background: var(--color-purple); opacity: 0.8; }
+.achievement-cell.item-other            { background: var(--color-purple); opacity: 0.4; }
 .grant-row,
 .edujob-row {
   position: relative;
@@ -332,17 +415,25 @@ section.career-chart-container {
   z-index: 2;
   display: flex;
   height: 25px;
-  padding: 0 2px 3px;
+  padding: 0 2px 8px;
   font-size: 0.8em;
   line-height: 1em;
-  border: 1px solid orange;
-  border-width: 0 0 5px;
   overflow: hidden;
 }
-.grant-cell.isPI      { border-color: #4ea24e; }
-.grant-cell.isnotPI   { border-color: #a6d0a6; }
-.edujob-cell.edu-cell { border-color: #739fee; }
-.edujob-cell.job-cell { border-color: #5077bd; }
+.grant-cell:after,
+.edujob-cell:after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1px solid transparent;
+  border-width: 0 0 5px;
+}
+.grant-cell.isPI:after      { border-color: var(--color-green); opacity: 1; }
+.grant-cell.isnotPI:after   { border-color: var(--color-green); opacity: 0.5; }
+.edujob-cell.job-cell:after { border-color: var(--color-blue); opacity: 1; }
+.edujob-cell.edu-cell:after { border-color: var(--color-blue); opacity: 0.5; }
 .grant-cell span,
 .edujob-cell span {
   display: inline-block;
@@ -357,8 +448,12 @@ section.career-chart-container {
   z-index: 10;
   cursor: pointer;
   font-weight: bold;
-  border-color: #f60;
-  color: #f60;
+  color: var(--color-orange);
+}
+.grant-cell:hover:after,
+.edujob-cell:hover:after {
+  border-color: var(--color-orange);
+  opacity: 1;
 }
 .grant-cell:hover span,
 .edujob-cell:hover span {
@@ -450,19 +545,19 @@ section.career-chart-container {
   opacity: 0.7;
 }
 .copy-chart-url {
-  background: #dc143c;
+  background: #333;
 }
 .share-chart-to-X {
   background: #333;
 }
 .embed-chart {
-  background: #339;
+  background: var(--color-blue);
 }
 .print-chart {
-  background: #393;
+  background: var(--color-green);
 }
 .export-html {
-  background: #933;
+  background: var(--color-red);
 }
 .export-chart textarea {
   border: 0;
@@ -475,42 +570,89 @@ section.career-chart-container {
   white-space: nowrap;
 }
 footer {
+  position: relative;
   padding: 20px 30px;
   background: #eee;
   color: black;
   word-break: break-all;
 }
 footer h2 {
-  font-size: 1em;
+  font-size: 1.2em;
 }
 footer a {
-  color: blue;
+  color: var(--color-blue);
 }
 footer p {
   padding: 10px 20px 0;
+  font-size: 0.9rem;
 }
 footer p + h2 {
   margin: 30px 0 0;
 }
-footer .release-note {
-  margin: 10px 20px;
+footer .content {
+  float: left;
+  margin: 25px 0;
+  width: calc(100% - 570px);
 }
-footer .release-note li {
-  list-style: circle;
-  margin: 5px 20px;
+footer .content dl {
+  margin: 15px 10px;
+  line-height: 1.1rem;
+}
+footer .content dl dt {
+  color: #999;
+  font-size: 0.8rem;
+  padding: 0 8px;
+  margin: 14px 0 2px;
+}
+footer .content dl dd {
+  padding: 2px 8px;
+  font-size: 0.9rem;
 }
 footer .original-tweet {
   float: right;
   padding: 5px;
-  margin: 0 0 0 30px;
 }
-footer .content {
-  margin: 25px 0;
+@media (max-width: 960px) {
+  footer .content {
+    float: none;
+    width: 100%;
+  }
+  footer .original-tweet {
+    float: none;
+    margin: 0 auto;
+  }
+}
+footer .release-note {
+  margin: 20px 0;
+  width: 100%;
+}
+footer .release-note dl {
+  margin: 15px 10px;
+  line-height: 1.1rem;
+}
+footer .release-note dl dt {
+  color: #999;
+  font-size: 0.8rem;
+  padding: 0 8px;
+}
+footer .release-note dl dd {
+  padding: 0 8px 8px;
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  border: 1px dotted #ccc;
+  border-width: 0 0 1px;
+}
+footer .credit {
+  padding: 15px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #999;
 }
 
 .app.embed header,
 .app.embed footer,
 .app.embed .file-select-container,
+.app.embed .career-event-editor,
 .app.embed .chart-setting-container,
 .app.embed .career-chart-container h2,
 .app.embed .export-chart,
@@ -541,27 +683,29 @@ footer .content {
   <h1>SuccessRiver AcademicCareerChart (${ systemVersion })</h1>
   <nav>
     <ul>
-      <li><a href="https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS">Github</a>
+      <li><a href="https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS" class="ic ic-24 ic-github">Github</a>
     </ul>
   </nav>
 </header>
 <section class="file-select-container">
   <h2>① researchmapのエクスポートファイル（.jsonl）を選択</h2>
-  <div v-if="isSharingMode">
-    <p class="selected-file-name" @click="resetPage">
-      URLから生成されました。
-      <span>ファイルを変更する</span>
-    </p>
-  </div>
-  <div v-else-if="rmFile == null">
-    <label for="researchmap-file-input">ファイルを選択</label>
-    <input type="file" id="researchmap-file-input" @change="selectResearchmapFile"></li>
-  </div>
-  <div v-else>
-    <p class="selected-file-name" @click="clearCareerChart">
-      ${ rmFile.name }
-      <span>ファイルを変更する</span>
-    </p>
+  <div class="file-select-buttons">
+    <div v-if="isSharingMode">
+      <p class="selected-file-name" @click="resetPage">
+        URLから生成されました。
+        <span class="ic ic-20 ic-file">ファイルを変更する</span>
+      </p>
+    </div>
+    <div v-else-if="rmFile == null">
+      <label for="researchmap-file-input" class="ic ic-20 ic-file">ファイルを選択</label>
+      <input type="file" id="researchmap-file-input" @change="selectResearchmapFile"></li>
+    </div>
+    <div v-else>
+      <p class="selected-file-name" @click="clearCareerChart">
+        ${ rmFile.name }
+        <span class="ic ic-20 ic-file">ファイルを変更する</span>
+      </p>
+    </div>
   </div>
 </section>
 <section class="career-event-editor">
@@ -571,10 +715,10 @@ footer .content {
       <input type="month" v-model="event.date" @blur="saveCareerEvents">
       <input type="text" v-model="event.content" placeholder="イベント内容を入力" @blur="saveCareerEvents">
       <button type="button"
-              class="career-event-remove"
+              class="career-event-remove ic ic-16 ic-remove"
               @click="removeCareerEventRow(idx)">削除</button>
     </div>
-    <button type="button" class="career-event-add" @click="addCareerEventRow">追加する</button>
+    <button type="button" class="career-event-add ic ic-20 ic-add-event" @click="addCareerEventRow">追加する</button>
   </div>
 </section>
 <section class="chart-setting-container">
@@ -624,7 +768,7 @@ footer .content {
 </section>
 <section class="career-chart-container">
   <h2>④ キャリアチャート出力結果</h2>
-  <div class="career-chart-empty" v-if="!chart.latestYear"><label for="researchmap-file-input">ファイルを選択してください</label></div>
+  <div class="career-chart-empty" v-if="!chart.latestYear"><label for="researchmap-file-input"><span class="ic ic-20 ic-file">ファイルを選択してください</span></label></div>
   <div class="career-chart" v-if="chart.latestYear" @scroll="onScrollChart">
     <div class="career-chart-wrap" id="career-chart-wrap">
       <div class="year-background">
@@ -716,65 +860,65 @@ footer .content {
   </nav>
 </section>
 <footer class="clearfix">
-  <div class="original-tweet">
-    <blockquote class="twitter-tweet"><p lang="ja" dir="ltr">キャリア形成について話す機会があった時に、キャリアイベントとライフイベントを並べた図を作成したのだけれど、研究メインのものとして、ライフイベントの代わりに学生指導状況という項目を作りつつ、色々と情報を更新した。こういう年表を作り更新することで、自身の状況を俯瞰的に捉えておきたい <a href="https://t.co/1RDY98i4jj">pic.twitter.com/1RDY98i4jj</a></p>&mdash; サクセスリバーコーテシーinエイトプリンス (@rei_nari) <a href="https://twitter.com/rei_nari/status/1691102017153114112?ref_src=twsrc%5Etfw">August 14, 2023</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+  <div class="clearfix">
+    <div class="content">
+      <h2>◆ このページについて</h2>
+      <p>
+        「SuccessRiver AcademicCareerChart (${ systemVersion })」は、<a href="https://x.com/rei_nari">@rei_nari</a>さん考案のキャリアイベント図をresearchmapに登録された情報から生成します。
+      </p>
+      <p>
+        このシステムは、各種設定の一時保存のため LocalStorage を使用します。
+      </p>
+      <h2>◆ 開発に関する情報</h2>
+      <dl>
+        <dt>Githubリポジトリ</dt>
+        <dd><a href="https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS">https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS</a></dd>
+        <dt>制作者</dt>
+        <dd>松田裕貴（<a href="https://x.com/yukimatJP">@yukimatJP</a>）</dd>
+        <dd>岡山大学 コンヴィヴィアルコンピューティング研究室（<a href="https://x.com/cocolabJP">@cocolabJP</a>）</dd>
+        <dt>ライセンス</dt>
+        <dd> CC-BY-NC 4.0</dd>
+        <dd><a href="https://creativecommons.org/licenses/by-nc/4.0/">https://creativecommons.org/licenses/by-nc/4.0/</a></dd>
+        <dd><img src="img/cc-by-nc.png" style="width: 120px;"></dd>
+      </dl>
+    </div>
+    <div class="original-tweet">
+      <blockquote class="twitter-tweet"><p lang="ja" dir="ltr">キャリア形成について話す機会があった時に、キャリアイベントとライフイベントを並べた図を作成したのだけれど、研究メインのものとして、ライフイベントの代わりに学生指導状況という項目を作りつつ、色々と情報を更新した。こういう年表を作り更新することで、自身の状況を俯瞰的に捉えておきたい <a href="https://t.co/1RDY98i4jj">pic.twitter.com/1RDY98i4jj</a></p>&mdash; サクセスリバーコーテシーinエイトプリンス (@rei_nari) <a href="https://twitter.com/rei_nari/status/1691102017153114112?ref_src=twsrc%5Etfw">August 14, 2023</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+    </div>
   </div>
-  <div class="content">
-    <h2>◆ このページについて</h2>
-    <p>
-      「SuccessRiver AcademicCareerChart (${ systemVersion })」は、<a href="https://x.com/rei_nari">@rei_nari</a>さん考案のキャリアイベント図をresearchmapに登録された情報から生成します。
-    </p>
-    <p>
-      このシステムは、各種設定の一時保存のため LocalStorage を使用します。
-    </p>
-    <h2>◆ 開発に関する情報</h2>
-    <p>
-      <b>Githubリポジトリ</b>： <a href="https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS">https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS</a>
-    </p>
-    <p>
-      <b>制作者</b>：<br>
-      松田裕貴（<a href="https://x.com/yukimatJP">@yukimatJP</a>）<br>
-      岡山大学 コンヴィヴィアルコンピューティング研究室（<a href="https://x.com/cocolabJP">@cocolabJP</a>）
-    </p>
+  <div class="release-note">
     <h2>◇ リリースノート</h2>
-    <ul class="release-note">
-      <li>
-        2025/12/31 (v1.6.1)<br>
-        キャリアイベントのURL出力・HTML出力に対応しました。
-      <li>
-        2025/12/31 (v1.6)<br>
-        キャリアイベントを登録できるようにしました。
-      <li>
-        2025/12/31 (v1.5)<br>
-        表示オプションを LocalStorage に保存するようにしました。
-      <li>
-        2025/12/31 (v1.4.3)<br>
-        主著・責任著者以外の業績を表示するかどうかのオプションを追加しました。
-      <li>
-        2025/12/31 (v1.4.2)<br>
-        獲得予算・経歴の表示を修正、ホバー時に隠れたテキストが表示されるようになりました。
-      <li>
-        2025/12/27 (v1.4.1)<br>
-        researchmapファイルを選び直したときのバグを修正。
-      <li>
-        2025/12/27 (v1.4)<br>
-        静的なHTMLファイルとしてチャートを出力できるようになりました。
-      <li>
-        2025/12/26 (v1.3)<br>
-        年表示をチャートの上部に表示し、交互に背景色をつけることで、縦に長いチャートでも見やすくなりました。
-      <li>
-        2023/08/20 (v1.2.1)<br>
-        英語表記のみの学歴・職歴・予算への対応、年月日の設定のないデータに対するエラーハンドリング。
-      <li>
-        2023/08/20 (v1.2)<br>
-        埋め込みコードと印刷表示に対応。
-      <li>
-        2023/08/20 (v1.1)<br>
-        生成したチャートをURLとして共有できるようになりました。なお、ロングキャリアの研究者はURLが長くなりすぎて文字数制限の問題が生じるかもしれません。
-      <li>
-        2023/08/19（v1.0）<br>
-        本システムは週末ひとりハッカソンの成果のため、対応していない部分が多々あります（そもそも、自分のresearchmapの使い方が間違えてる部分もありそう）。予算や学歴・職歴のラベルに関してはもう少しいい感じにしたいところです。
-    </ul>
+    <dl>
+      <dt>2026/01/01 (v1.6.2)</dt>
+      <dd>UIを整理しました。Note Sans と Google Material Symbols を使うようにしました。ライセンスを表示するようにしました。</dd>
+      <dt>2025/12/31 (v1.6.1)</dt>
+      <dd>キャリアイベントのURL出力・HTML出力に対応しました。</dd>
+      <dt>2025/12/31 (v1.6)</dt>
+      <dd>キャリアイベントを登録できるようにしました。</dd>
+      <dt>2025/12/31 (v1.5)</dt>
+      <dd>表示オプションを LocalStorage に保存するようにしました。</dd>
+      <dt>2025/12/31 (v1.4.3)</dt>
+      <dd>主著・責任著者以外の業績を表示するかどうかのオプションを追加しました。</dd>
+      <dt>2025/12/31 (v1.4.2)</dt>
+      <dd>獲得予算・経歴の表示を修正、ホバー時に隠れたテキストが表示されるようになりました。</dd>
+      <dt>2025/12/27 (v1.4.1)</dt>
+      <dd>researchmapファイルを選び直したときのバグを修正。</dd>
+      <dt>2025/12/27 (v1.4)</dt>
+      <dd>静的なHTMLファイルとしてチャートを出力できるようになりました。</dd>
+      <dt>2025/12/26 (v1.3)</dt>
+      <dd>年表示をチャートの上部に表示し、交互に背景色をつけることで、縦に長いチャートでも見やすくなりました。</dd>
+      <dt>2023/08/20 (v1.2.1)</dt>
+      <dd>英語表記のみの学歴・職歴・予算への対応、年月日の設定のないデータに対するエラーハンドリング。</dd>
+      <dt>2023/08/20 (v1.2)</dt>
+      <dd>埋め込みコードと印刷表示に対応。</dd>
+      <dt>2023/08/20 (v1.1)</dt>
+      <dd>生成したチャートをURLとして共有できるようになりました。なお、ロングキャリアの研究者はURLが長くなりすぎて文字数制限の問題が生じるかもしれません。</dd>
+      <dt>2023/08/19（v1.0）</dt>
+      <dd>本システムは週末ひとりハッカソンの成果のため、対応していない部分が多々あります（そもそも、自分のresearchmapの使い方が間違えてる部分もありそう）。予算や学歴・職歴のラベルに関してはもう少しいい感じにしたいところです。</dd>
+    </dl>
+  </div>
+  <div class="credit">
+    <small>SuccessRiver AcademicCareerChart (${ systemVersion }) by Yuki Matsuda, CC-BY-SA 4.0</small>
   </div>
 </footer>
 </div>
@@ -1607,7 +1751,7 @@ var app = new Vue({
     }
   },
   computed: {
-    systemVersion: function() { return 'v1.6.1'; }
+    systemVersion: function() { return 'v1.6.2'; }
   }
 });
 

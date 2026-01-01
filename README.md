@@ -9,6 +9,9 @@ Githubリポジトリ： <a href="https://github.com/yukimatJP/SuccessRiverAcade
 - 松田裕貴（<a href="https://twitter.com/yukimatJP">@yukimatJP</a>）
 - 岡山大学 コンヴィヴィアルコンピューティング研究室（<a href="https://twitter.com/cocolabJP">@cocolabJP</a>）
 
+ライセンス：
+- CC-BY-NC 4.0 <a href="https://creativecommons.org/licenses/by-nc/4.0/">https://creativecommons.org/licenses/by-nc/4.0/</a>
+
 <img width="1539" alt="SuccessRiverAcademicCareerChart" src="https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS/assets/3212917/09d336cb-0779-4006-9f15-033e0d36d399">
 
 ## Try it now
@@ -17,6 +20,8 @@ Githubリポジトリ： <a href="https://github.com/yukimatJP/SuccessRiverAcade
 
 ## Release Note
 
+- 2026/01/01 (v1.6.2)  
+  UIを整理しました。Note Sans と Google Material Symbols を使うようにしました。ライセンスを表示するようにしました。
 - 2025/12/31 (v1.6.1)  
   キャリアイベントのURL出力・HTML出力に対応しました。
 - 2025/12/31 (v1.6)  
