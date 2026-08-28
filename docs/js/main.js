@@ -1,0 +1,890 @@
+const $ = (id) => document.getElementById(id);
+const DISPLAY_OPTION_LS_KEY = "CareerChartDisplayOptions";
+const CAREER_EVENTS_LS_KEY  = "CareerChartCareerEvents";
+
+const JSONL = {
+  parse: (jsonl) => {
+    let jsonlArray = jsonl.split("\n").filter(s => s !== "");
+    let jsonlObj = {};
+    for(let i=0; i<jsonlArray.length; i++) {
+      let jsonlRow = JSON.parse(jsonlArray[i]);
+      if(!(jsonlRow.insert.type in jsonlObj)) jsonlObj[jsonlRow.insert.type] = [];
+      jsonlObj[jsonlRow.insert.type].push(jsonlRow.merge);
+    }
+    return jsonlObj;
+  }
+};
+
+var app = new Vue({
+  delimiters: ['${', '}'],
+  el: '#app',
+  data: {
+    isSharingMode:   false,
+    isEmbeddingMode: false,
+    isPrintingMode:  false,
+    rmFile: null,
+    rmJson: null,
+    researcher: {
+      name: {
+        ja: [],
+        en: [],
+        display: ''
+      },
+      affiliation: {
+        display: ''
+      }
+    },
+    career: {
+      educationsAndJobs: [],
+      grants: [],
+      achievements: {
+        journal:      {total: 0},
+        intlConf:     {total: 0},
+        domesticConf: {total: 0},
+        total: 0,
+      },
+      events: [
+        { date: "", content: "" }
+      ]
+    },
+    chart: {
+      firstYear: new Date().getFullYear(),
+      latestYear: 0,
+      settings: {
+        cellWidth: 50,
+        visibility: {
+          journal:      true,
+          intlConf:     true,
+          domesticConf: true,
+          notFirstCorrespAchievement: true,
+          notPIgrants:  true,
+        }
+      },
+      educationsAndJobs: [],
+      grants: [],
+      achievements: {
+        journal:      [],
+        intlConf:     [],
+        domesticConf: [],
+      },
+      events: [],
+    },
+    achievementTypeList: ['journal', 'intlConf', 'domesticConf'],
+    achievementNameList: {'journal': '論文誌・ジャーナル', 'intlConf': '国際会議プロシーディングス', 'domesticConf': '国内研究会・シンポジウム'},
+    exportedChartURL: '',
+    importData: '',
+  },
+  methods: {
+    initialize: function() {
+      this.loadDisplayOptions();
+      this.loadCareerEvents();
+      let params = new URLSearchParams(window.location.search);
+      if(params.has('chart')) {
+        this.isSharingMode = true;
+        this.importData = params.get('chart');
+        this.importChart();
+      }
+      if(params.has('embed')) this.isEmbeddingMode = true;
+      if(params.has('print')) this.isPrintingMode = true;
+    },
+    resetPage: function() {
+      this.clearCareerChart();
+      window.location.search = '';
+    },
+    saveDisplayOptions: function() {
+      try {
+        const payload = {
+          cellWidth: Number(this.chart.settings.cellWidth),
+          visibility: {
+            journal:      Boolean(this.chart.settings.visibility.journal),
+            intlConf:     Boolean(this.chart.settings.visibility.intlConf),
+            domesticConf: Boolean(this.chart.settings.visibility.domesticConf),
+            notFirstCorrespAchievement: Boolean(this.chart.settings.visibility.notFirstCorrespAchievement),
+            notPIgrants:  Boolean(this.chart.settings.visibility.notPIgrants),
+          }
+        };
+        localStorage.setItem(DISPLAY_OPTION_LS_KEY, JSON.stringify(payload));
+      } catch (e) {
+        console.warn("Failed to save display options:", e);
+      }
+    },
+    loadDisplayOptions: function() {
+      try {
+        const raw = localStorage.getItem(DISPLAY_OPTION_LS_KEY);
+        if (!raw) return;
+
+        const data = JSON.parse(raw);
+        if (!data || typeof data !== "object") return;
+
+        if (typeof data.cellWidth === "number" && isFinite(data.cellWidth)) {
+          const cw = Math.min(200, Math.max(30, Math.round(data.cellWidth)));
+          this.chart.settings.cellWidth = cw;
+        }
+
+        if (data.visibility && typeof data.visibility === "object") {
+          const v = data.visibility;
+          const vis = this.chart.settings.visibility;
+          if ("journal" in v)      vis.journal = Boolean(v.journal);
+          if ("intlConf" in v)     vis.intlConf = Boolean(v.intlConf);
+          if ("domesticConf" in v) vis.domesticConf = Boolean(v.domesticConf);
+          if ("notFirstCorrespAchievement" in v) vis.notFirstCorrespAchievement = Boolean(v.notFirstCorrespAchievement);
+          if ("notPIgrants" in v)  vis.notPIgrants = Boolean(v.notPIgrants);
+        }
+      } catch (e) {
+        console.warn("Failed to load display options:", e);
+      }
+    },
+    selectResearchmapFile: function(e) {
+      this.clearCareerChart();
+      const files = e.target.files || e.dataTransfer.files;
+      if (!files || !files[0]) return;
+      const f = files[0];
+      if (f.name.split('.').pop().toLowerCase() !== 'jsonl') {
+        alert("jsonlファイルを選択してください");
+        return;
+      }
+      this.rmFile = f;
+      const reader = new FileReader();
+      reader.readAsText(this.rmFile);
+      reader.onload = () => {
+        this.rmJson = JSONL.parse(reader.result);
+        this.parseCareerData();
+        this.plotCareerChart();
+      };
+    },
+    clearCareerChart: function() {
+      this.rmFile = null;
+      this.rmJson = null;
+
+      this.exportedChartURL = '';
+      this.importData = '';
+
+      this.researcher = {
+        name: { ja: [], en: [], display: '' },
+        affiliation: { display: '' }
+      };
+
+      this.career = {
+        educationsAndJobs: [],
+        grants: [],
+        achievements: {
+          journal:      { total: 0 },
+          intlConf:     { total: 0 },
+          domesticConf: { total: 0 },
+          total: 0
+        },
+        events: [{ date: "", content: "" }],
+      };
+
+      this.chart.firstYear = new Date().getFullYear();
+      this.chart.latestYear = 0;
+
+      this.loadDisplayOptions();
+      this.loadCareerEvents();
+
+      this.chart.educationsAndJobs = [];
+      this.chart.grants = [];
+      this.chart.achievements = { journal: [], intlConf: [], domesticConf: [] };
+      this.chart.events = [];
+
+      const root = document.documentElement;
+      root.style.setProperty('--col-width', this.chart.settings.cellWidth + "px");
+      root.style.setProperty('--row-width', "50px");
+      root.style.setProperty('--chart-header-position', "0px");
+
+      const sc = document.querySelector(".career-chart");
+      if (sc) sc.scrollLeft = 0;
+    },
+    parseCareerData() {
+      // Basic Info
+      if('researchers' in this.rmJson) {
+        let researcher = this.rmJson.researchers[0];
+        this.researcher.name.ja = [
+          researcher.family_name.ja + " " + researcher.given_name.ja,
+          researcher.family_name.ja +       researcher.given_name.ja,
+        ];
+        this.researcher.name.en = [
+          researcher.family_name.en + " " + researcher.given_name.en,
+          researcher.given_name.en  + " " + researcher.family_name.en,
+        ];
+        this.researcher.name.display = researcher.family_name.ja + " " + researcher.given_name.ja
+                              + " (" + researcher.given_name.en  + " " + researcher.family_name.en + ")";
+        this.researcher.affiliation.display = researcher.affiliations[0].affiliation.ja;
+      }
+      // Education History
+      for(let i=0; i<this.rmJson.education.length; i++) {
+        let edu = this.rmJson.education[i];
+        let yearFrom = this.getFinancialYear(edu.from_date);
+        let yearTo   = this.getFinancialYear(edu.to_date);
+        let eduAffiliation = this.getEduAffiliation(edu.affiliation);
+        let eduName = [];
+        if('department' in edu) eduName.push(this.getEduName(edu.department));
+        if('course' in edu) eduName.push(this.getEduName(edu.course));
+        if(eduAffiliation != '') eduName.push("（" + eduAffiliation + "）");
+        this.career.educationsAndJobs.push({yearFrom, yearTo, name:eduName.join(" "), isEdu:true});
+        this.updateCareerPeriod(yearFrom.year, yearTo.year);
+      }
+      // Job History
+      for(let i=0; i<this.rmJson.research_experience.length; i++) {
+        let job = this.rmJson.research_experience[i];
+        let yearFrom = this.getFinancialYear(job.from_date);
+        let yearTo   = this.getFinancialYear(job.to_date);
+        let jobName  = ('job' in job) ? this.getJobName(job) : '';
+        this.career.educationsAndJobs.push({yearFrom, yearTo, name:jobName, isEdu:false});
+        this.updateCareerPeriod(yearFrom.year, yearTo.year);
+      }
+      // Grant History
+      for(let i=0; i<this.rmJson.research_projects.length; i++) {
+        let grant = this.rmJson.research_projects[i];
+        let yearFrom  = this.getFinancialYear(grant.from_date);
+        let yearTo    = this.getFinancialYear(grant.to_date);
+        let grantName = this.getGrantName(grant);
+        let grantRole = !('research_project_owner_role' in grant) ? 'undefined'
+                      : grant.research_project_owner_role == 'principal_investigator' ? 'principal'
+                      : grant.research_project_owner_role == 'coinvestigator' ? 'coinvestigator'
+                      : 'others';
+        this.career.grants.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': grantName, 'role': grantRole});
+        this.updateCareerPeriod(yearFrom.year, yearTo.year);
+      }
+      // Achievement History (paper)
+      for(let i=0; i<this.rmJson.published_papers.length; i++) {
+        let achvmnt = this.rmJson.published_papers[i];
+        if (!('published_paper_type' in achvmnt)) continue;
+
+        let achvmntType = achvmnt.published_paper_type == 'scientific_journal' ? 'journal'
+          : achvmnt.published_paper_type == 'international_conference_proceedings' ? 'intlConf'
+          : achvmnt.published_paper_type == 'symposium' ? 'domesticConf' : '';
+
+        if(achvmntType == '') continue;
+
+        let firstAuthorFlag = false;
+        let correspAuthorFlag = false;
+
+        if('published_paper_owner_roles' in achvmnt) {
+          firstAuthorFlag = achvmnt.published_paper_owner_roles.includes('lead');
+          correspAuthorFlag = achvmnt.published_paper_owner_roles.includes('corresponding');
+        }
+        if(!firstAuthorFlag && 'en' in achvmnt.authors) {
+          firstAuthorFlag = this.researcher.name.en.includes(achvmnt.authors.en[0].name);
+        }
+        if(!firstAuthorFlag && 'ja' in achvmnt.authors) {
+          firstAuthorFlag = this.researcher.name.ja.includes(achvmnt.authors.ja[0].name);
+        }
+
+        achvmntYear = this.getFinancialYear(achvmnt.publication_date).year;
+
+        if(!(achvmntYear in this.career.achievements[achvmntType])) {
+          this.career.achievements[achvmntType][achvmntYear] = {firstCorresp:0, first:0, corresp:0, other:0, total:0};
+        }
+
+        let roleKey = (firstAuthorFlag && correspAuthorFlag) ? 'firstCorresp'
+                    : firstAuthorFlag ? 'first'
+                    : correspAuthorFlag ? 'corresp'
+                    : 'other'
+
+        this.career.achievements[achvmntType][achvmntYear][roleKey]++;
+        this.career.achievements[achvmntType][achvmntYear].total++;
+        this.career.achievements[achvmntType].total++;
+        this.career.achievements.total++;
+        this.updateCareerPeriod(achvmntYear, achvmntYear);
+      }
+    },
+    getFinancialYear(targetDate, isFrom) {
+      if(targetDate == "9999" || targetDate == undefined || targetDate == null) {
+        return {year:new Date().getFullYear()+1, month:isFrom ? 4 : 3};
+      }
+      let dt = targetDate.split('-');
+      let year  = (dt.length > 0) ? parseInt(dt[0]) : new Date().getFullYear();
+      let month = (dt.length > 1) ? parseInt(dt[1]) : isFrom ? 4 : 3;
+      return {'year': year, 'month': month}
+    },
+    updateCareerPeriod(yearFrom, yearTo) {
+      if(this.chart.firstYear  > yearFrom) { this.chart.firstYear  = yearFrom; }
+      if(this.chart.latestYear < yearTo  ) { this.chart.latestYear = Math.min(new Date().getFullYear(), yearTo); }
+    },
+    getEduAffiliation(edu) {
+      if('ja' in edu) {
+        return edu.ja;
+      } else if('en' in edu) {
+        return edu.en;
+      }
+    },
+    getEduName(edu) {
+      if('ja' in edu) {
+        // if     (edu.ja.includes("修士"))       { return '修士課程'; }
+        // else if(edu.ja.includes("修士課程"))    { return '修士課程'; }
+        // else if(edu.ja.includes("博士前期課程")) { return '博士前期課程'; }
+        // else if(edu.ja.includes("博士後期課程")) { return '博士後期課程'; }
+        // else if(edu.ja.includes("博士課程"))    { return '博士課程'; }
+        // else if(edu.ja.includes("博士"))       { return '博士課程'; }
+        // else if(edu.ja.includes("研究科"))     { return '大学院'; }
+        return edu.ja;
+      } else if('en' in edu) {
+        return edu.en;
+      }
+    },
+    getJobName(job) {
+      let lang = ('ja' in job.job) ? 'ja' : 'en';
+      let jobName = "";
+      let jobAffiliation = [];
+      if('affiliation' in job) {
+        jobAffiliation.push(this.getOrgAbbreviation(job.affiliation[lang]));
+      }
+      if('section' in job) {
+        jobAffiliation.push(job.section[lang]);
+      }
+      if('job' in job) {
+        jobName = job.job[lang] + " （" + jobAffiliation.join(" ") + ")";
+      }
+
+      if(lang == 'ja' && jobName.includes("JSPS")) {
+        jobName = jobName.includes("DC1") ? "学振DC1"
+                : jobName.includes("DC2") ? "学振DC2"
+                : jobName.includes("RPD") ? "学振RPD"
+                : jobName.includes("SPD") ? "学振SPD"
+                : jobName.includes("PD")  ? "学振PD"  : jobName;
+      }
+      return jobName;
+    },
+    getGrantName(grant) {
+      let grantName = '';
+      if(grantName == '' && 'offer_organization' in grant) {
+        let grantOrg = grant.offer_organization[('ja' in grant.offer_organization) ? 'ja' : 'en'];
+        grantName = this.getOrgAbbreviation(grantOrg);
+        if('category' in grant) {
+          grantName += "&nbsp;" + grant.category[('ja' in grant.category) ? 'ja' : 'en'];
+        } else if('system_name' in grant) {
+          grantName += "&nbsp;" + grant.system_name[('ja' in grant.system_name) ? 'ja' : 'en'];
+        }
+      }
+      return grantName;
+    },
+    getOrgAbbreviation(org) {
+      if(org.indexOf("科学技術振興機構") > -1) return "JST";
+      if(org.indexOf("日本学術振興会") > -1 || org.indexOf("学振") > -1) return "JSPS";
+      if(org.indexOf("新エネルギー・産業技術総合開発機構") > -1) return "NEDO";
+      if(org.indexOf("日本医療研究開発機構") > -1) return "AMED";
+      if(org.indexOf("情報通信研究機構") > -1) return "NICT";
+      if(org.indexOf("理化学研究所") > -1) return "RIKEN";
+      return org;
+    },
+    addCareerEventRow: function() {
+      this.career.events.push({ date: "", content: "" });
+      this.saveCareerEvents();
+    },
+    removeCareerEventRow: function(idx) {
+      if (this.career.events.length <= 1) {
+        this.career.events = [{ date: "", content: "" }];
+      } else {
+        this.career.events.splice(idx, 1);
+      }
+      this.saveCareerEvents();
+    },
+    sortCareerEvents: function () {
+      this.career.events.sort((a, b) => {
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+        return a.date.localeCompare(b.date);
+      });
+    },
+    saveCareerEvents: function() {
+      try {
+        const cleaned = (this.career.events || [])
+          .map(e => ({
+            date: (e && typeof e.date === "string") ? e.date.trim() : "",
+            content: (e && typeof e.content === "string") ? e.content.trim() : ""
+          }))
+          .filter(e => e.date !== "" || e.content !== "");
+        localStorage.setItem(CAREER_EVENTS_LS_KEY, JSON.stringify(cleaned));
+      } catch (e) {
+        console.warn("Failed to save career events:", e);
+      }
+      this.replotCareerChart();
+    },
+    loadCareerEvents: function() {
+      try {
+        const raw = localStorage.getItem(CAREER_EVENTS_LS_KEY);
+        if (!raw) return;
+
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) return;
+
+        const normalized = arr.map(e => ({
+          date: (e && typeof e.date === "string") ? e.date : "",
+          content: (e && typeof e.content === "string") ? e.content : ""
+        }));
+
+        this.career.events = normalized.length ? normalized : [{ date: "", content: "" }];
+        this.sortCareerEvents();
+      } catch (e) {
+        console.warn("Failed to load career events:", e);
+      }
+    },
+    plotCareerChart() {
+      // set CSS property
+      this.updateCellWidth();
+      // check data
+      if(this.career.educationsAndJobs.length == 0 && this.career.grants.length == 0) return;
+      // Education and Job History
+      let edujob = this.career.educationsAndJobs.sort((a, b) => a.yearFrom.year - b.yearFrom.year);
+      for(let i=0; i<edujob.length; i++) {
+        let newItem = this.getEducationAndJobItem(edujob[i]);
+        if(this.chart.educationsAndJobs.length == 0) {
+          this.chart.educationsAndJobs.push([newItem]);
+        } else {
+          for(let j=0; j<this.chart.educationsAndJobs.length; j++) {
+            if(this.chart.educationsAndJobs[j][0].from > newItem.to) {
+              this.chart.educationsAndJobs[j].unshift(newItem);
+              break;
+            } else if(this.chart.educationsAndJobs[j][this.chart.educationsAndJobs[j].length-1].to < newItem.from) {
+              this.chart.educationsAndJobs[j].push(newItem);
+              break;
+            } else if(j == this.chart.educationsAndJobs.length - 1) {
+              this.chart.educationsAndJobs.push([newItem]);
+              break;
+            }
+          }
+        }
+      }
+      // Grant History
+      let grants = this.career.grants.sort((a, b) => a.yearFrom.year - b.yearFrom.year);
+      for(let i=0; i<grants.length; i++) {
+        let newItem = this.getGrantItem(grants[i]);
+        if(this.chart.settings.visibility.notPIgrants || newItem.isPI) {
+          if(this.chart.grants.length == 0) {
+            this.chart.grants.push([newItem]);
+          } else {
+            for(let j=0; j<this.chart.grants.length; j++) {
+              if(this.chart.grants[j][0].from > newItem.to) {
+                this.chart.grants[j].unshift(newItem);
+                break;
+              } else if(this.chart.grants[j][this.chart.grants[j].length-1].to < newItem.from) {
+                this.chart.grants[j].push(newItem);
+                break;
+              } else if(j == this.chart.grants.length - 1) {
+                this.chart.grants.push([newItem]);
+                break;
+              }
+            }
+          }
+        }
+      }
+      // Achievement History (paper)
+      for(let achvmntType of this.achievementTypeList) {
+        this.chart.achievements[achvmntType] = {};
+        for(let i=this.chart.firstYear; i<=this.chart.latestYear; i++) {
+          let year = String(i);
+          if(year in this.career.achievements[achvmntType]) {
+            let achvmnt = this.career.achievements[achvmntType][year];
+            let firstCorrespCount = achvmnt.firstCorresp + achvmnt.first + achvmnt.corresp;
+            this.chart.achievements[achvmntType][year] = Array(firstCorrespCount).fill(1).concat(Array(achvmnt.other).fill(0));
+          } else {
+            this.chart.achievements[achvmntType][year] = [];
+          }
+        }
+      }
+      // Career Events
+      this.chart.events = [];
+      const evs = (this.career.events || [])
+        .filter(e => e && (e.date || e.content))
+        .map(e => ({
+          date: (typeof e.date === "string") ? e.date.trim() : "",
+          content: (typeof e.content === "string") ? e.content.trim() : ""
+        }))
+        .filter(e => e.date !== "");
+      evs.sort((a, b) => a.date.localeCompare(b.date));
+      for (let i = 0; i < evs.length; i++) {
+        const it = this.getCareerEventItem(evs[i]);
+        this.chart.events.push(it);
+        this.updateCareerPeriod(it.year, it.year);
+      }
+    },
+    replotCareerChart() {
+      // save display options
+      this.saveDisplayOptions();
+      // reset plot data
+      this.chart.educationsAndJobs = [];
+      this.chart.grants = [];
+      this.chart.achievements = { journal: [], intlConf: [], domesticConf: [] };
+      this.plotCareerChart();
+    },
+    getEducationAndJobItem(item) {
+      return {
+        from:  parseFloat((item.yearFrom.year + item.yearFrom.month / 12.0).toFixed(2)),
+        to:    parseFloat((item.yearTo.year   + item.yearTo.month   / 12.0).toFixed(2)),
+        name:  item.name,
+        isEdu: item.isEdu,
+      };
+    },
+    getGrantItem(item) {
+      return {
+        from: parseFloat((item.yearFrom.year + item.yearFrom.month / 12.0).toFixed(2)),
+        to:   parseFloat((item.yearTo.year   + item.yearTo.month   / 12.0).toFixed(2)),
+        name: item.name,
+        isPI: item.role == 'principal',
+      };
+    },
+    getCareerEventItem(e) {
+      const dt = String(e.date).split("-");
+      const y = (dt.length > 0) ? parseInt(dt[0]) : new Date().getFullYear();
+      const m = (dt.length > 1) ? parseInt(dt[1]) : 1;
+      const pos = parseFloat((y + ((m - 1) / 12.0)).toFixed(2));
+      const mm = String(m).padStart(2, "0");
+      const label = (e.content && e.content !== "") ? e.content : "";
+      return {
+        year: y,
+        pos: pos,
+        label: label
+      };
+    },
+    getEventCellStyle(item) {
+      return {
+        left: (this.chart.settings.cellWidth * (item.pos - this.chart.firstYear)) + "px"
+      };
+    },
+    updateCellWidth() {
+      // save display options
+      this.saveDisplayOptions();
+      // update cell width
+      let root = document.documentElement;
+      root.style.setProperty('--col-width', this.chart.settings.cellWidth + "px");
+      root.style.setProperty('--row-width', this.chart.settings.cellWidth * (4 + this.chart.latestYear - this.chart.firstYear) + "px");
+    },
+    onScrollChart(e) {
+      document.documentElement.style.setProperty('--chart-header-position', e.target.scrollLeft + "px");
+    },
+    getAchievementRowHeight(type) {
+      let maxLength = 0;
+      for([year, achvmnt] of Object.entries(this.chart.achievements[type])) {
+        if(!this.chart.settings.visibility.notFirstCorrespAchievement) {
+          achvmnt = achvmnt.filter(n => n == 1);
+        }
+        maxLength = Math.max(maxLength, achvmnt.length);
+      }
+      return maxLength;
+    },
+    getStackCellStyle(item) {
+      return {
+        width: (this.chart.settings.cellWidth * (item.to - item.from)) + 'px',
+        left:  (this.chart.settings.cellWidth * (item.from - this.chart.firstYear)) + 'px'
+      };
+    },
+    exportChart() {
+      let eaj = [];
+      for(let i=0; i<this.chart.educationsAndJobs.length; i++) {
+        let tmp = [];
+        for(let j=0; j<this.chart.educationsAndJobs[i].length; j++) {
+          let data = this.chart.educationsAndJobs[i][j];
+          tmp.push([
+            parseFloat((data.from-2000.0).toFixed(2)),
+            parseFloat((data.to-2000.0).toFixed(2)),
+            "__" + data.name + "__",
+            Number(data.isEdu)
+          ]);
+        }
+        eaj.push(tmp);
+      }
+      let grants = [];
+      for(let i=0; i<this.chart.grants.length; i++) {
+        let tmp = [];
+        for(let j=0; j<this.chart.grants[i].length; j++) {
+          let data = this.chart.grants[i][j];
+          tmp.push([
+            parseFloat((data.from-2000.0).toFixed(2)),
+            parseFloat((data.to-2000.0).toFixed(2)),
+            "__" + data.name + "__",
+            Number(data.isPI)
+          ]);
+        }
+        grants.push(tmp);
+      }
+      let achvmnt = [];
+      for(let type of this.achievementTypeList) {
+        let tmp = [];
+        for(let i=this.chart.firstYear; i<=this.chart.latestYear; i++) {
+          let val = this.chart.achievements[type][String(i)];
+          let principal = val.filter(e => e == 1).length;
+          let coauthor  = val.filter(e => e == 0).length;
+          tmp.push(principal+'-'+coauthor);
+        }
+        tmp = tmp.join('_').replaceAll('0-0', '').replaceAll('0', '');
+        achvmnt.push(tmp);
+      }
+      let events = [];
+      for (let i=0; i<(this.career.events || []).length; i++) {
+        const e = this.career.events[i] || {};
+        const date = (typeof e.date === "string") ? e.date.trim() : "";
+        const content = (typeof e.content === "string") ? e.content.trim() : "";
+        if(!date && !content) continue;
+
+        const dt = date.split("-");
+        const y = (dt.length > 0 && dt[0]) ? parseInt(dt[0]) : this.chart.firstYear;
+        const m = (dt.length > 1 && dt[1]) ? parseInt(dt[1]) : 1;
+        if(!isFinite(y) || !isFinite(m)) continue;
+
+        const pos = parseFloat(((y + (m / 12.0)) - 2000.0).toFixed(2));
+        events.push(pos);
+        events.push("__" + content + "__");
+      }
+      let expJson = [
+        // researcher info
+        encodeURI(this.researcher.name.display),
+        encodeURI(this.researcher.affiliation.display),
+        // year
+        this.chart.firstYear-2000,
+        this.chart.latestYear-2000,
+        // setting
+        this.chart.settings.cellWidth,
+        Number(this.chart.settings.visibility.journal),
+        Number(this.chart.settings.visibility.intlConf),
+        Number(this.chart.settings.visibility.domesticConf),
+        Number(this.chart.settings.visibility.notPIgrants),
+        Number(this.chart.settings.visibility.notFirstCorrespAchievement),
+        // chart
+        encodeURI(eaj),
+        encodeURI(grants),
+        encodeURI(achvmnt),
+        encodeURI(events),
+      ];
+      this.exportedChartURL = 'https://career-chart.yukimat.jp/?chart=' + expJson.map(encodeURIComponent).join('...');
+      setTimeout(() => {
+        $('exported-chart-url').select();
+        document.execCommand('copy');
+      }, 100);
+    },
+    shareChartToX() {
+      this.exportChart();
+      let url = encodeURI('https://x.com/intent/tweet?text=サクセスリバー式キャリアチャートを作ってみたよ！\n→ ' + this.exportedChartURL + '\n\n@yukimatJP&hashtags=SuccessRiverAcademicCareerChartJS,サクセスリバー式キャリアチャート');
+      window.open(url, "_blank");
+    },
+    embedChart() {
+      this.exportChart();
+      let ww = $("career-chart-wrap").offsetWidth + 130;
+      let wh = $("career-chart-wrap").offsetHeight + 60;
+      this.exportedChartURL = '<iframe src="' + this.exportedChartURL.replace('?chart=', '?embed&chart=') + '" width=' + ww + ' height=' + wh + '>';
+      setTimeout(() => {
+        $('exported-chart-url').select();
+        document.execCommand('copy');
+      }, 100);
+    },
+    printChart() {
+      this.exportChart();
+      this.exportedChartURL = this.exportedChartURL.replace('?chart=', '?print&chart=');
+      window.open(this.exportedChartURL, "_blank");
+    },
+    buildPrintOpenUrl() {
+      this.exportChart();
+      return this.exportedChartURL.replace('?chart=', '?print&chart=');
+    },
+    exportHTML() {
+      const src = document.querySelector(".career-chart-container");
+      const sc = document.querySelector(".career-chart");
+      if (!src || !sc) return alert("チャートが表示されていないため、HTMLを書き出せません。");
+
+      const clone = src.cloneNode(true);
+
+      // UI部品はHTMLから落とす
+      ["header","footer",".file-select-container",".chart-setting-container",".career-chart-container h2",".export-chart"]
+        .forEach(sel => clone.querySelectorAll(sel).forEach(n => n.remove()));
+
+      // Vueの属性は静的HTMLでは不要
+      const rmAttrs = ["v-if","v-else","v-else-if","v-for","v-model","v-html",":class",":style",":id",":for","@click","@scroll","@change","@input"];
+      clone.querySelectorAll("*").forEach(el => rmAttrs.forEach(a => el.hasAttribute(a) && el.removeAttribute(a)));
+
+      const wrap = document.createElement("div");
+      wrap.className = "app print";
+      wrap.appendChild(clone);
+
+      const cs = getComputedStyle(document.documentElement);
+      const col = (cs.getPropertyValue("--col-width") || "50px").trim() || "50px";
+      const row = (cs.getPropertyValue("--row-width") || "50px").trim() || "50px";
+      const pos0 = (cs.getPropertyValue("--chart-header-position") || "").trim();
+      const pos = pos0 || ((sc.scrollLeft || 0) + "px");
+      const vars = `:root{--col-width:${col};--row-width:${row};--chart-header-position:${pos};}`;
+
+      const tmpDoc = document.implementation.createHTMLDocument("tmp");
+      const st = tmpDoc.createElement("style");
+      st.textContent = Array.from(document.querySelectorAll("style")).map(s => s.textContent || "").join("\n");
+      tmpDoc.head.appendChild(st);
+
+      const tmpRoot = tmpDoc.createElement("div");
+      tmpRoot.innerHTML = wrap.outerHTML;
+      tmpDoc.body.appendChild(tmpRoot);
+
+      const css = pruneCSS(tmpDoc, tmpRoot);
+      const extra = "html,body{margin:0;padding:0} .app.print .career-chart-container{padding:0!important} .app.print .career-chart{width:100vw;border:none}";
+
+      const formatDom = (s) => {
+        s = s.replace(/<\/([a-zA-Z0-9:-]+)>\s*</g, "</$1>\n<");
+        s = s.replace(/\n{2,}/g, "\n");
+        return s.trim();
+      };
+
+      const body = formatDom(wrap.outerHTML).trim() + "\n";
+      const html = `<!doctype html><html lang="ja"><!--  Author: Yuki Matsuda @yukimatJP //--><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AcademicCareerChart Export</title><style>${css}${vars}${extra}</style></head><body>${body}</body></html>`;
+
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "career-chart.html";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    },
+    importChart() {
+      let d = this.importData.split('...').map(s => decodeURIComponent(s));
+      this.researcher.name.display = decodeURI(d[0]);
+      this.researcher.affiliation.display = decodeURI(d[1]);
+      this.chart.firstYear = parseInt(d[2]) + 2000;
+      this.chart.latestYear = parseInt(d[3]) + 2000;
+      this.chart.settings.cellWidth = parseInt(d[4]);
+      this.chart.settings.visibility.journal = Boolean(parseInt(d[5]));
+      this.chart.settings.visibility.intlConf = Boolean(parseInt(d[6]));
+      this.chart.settings.visibility.domesticConf = Boolean(parseInt(d[7]));
+      this.chart.settings.visibility.notPIgrants = Boolean(parseInt(d[8]));
+      this.chart.settings.visibility.notFirstCorrespAchievement = Boolean(parseInt(d[9]));
+      // Education and Job History
+      let eaj = JSON.parse("[" + d[10].replaceAll('__', '"') + "]");
+      for(let i=0; i<parseInt(eaj.length/4); i++) {
+        let eajItem = []
+        let tmp = parseFloat(eaj[i*4]);
+        let yearFrom = {
+          year: parseInt(tmp + 2000),
+          month: Math.ceil(12 * (tmp - parseInt(tmp)) * (tmp < 0 ? -1 : 1))
+        };
+        tmp = parseFloat(eaj[i*4 + 1]);
+        let yearTo   = {
+          year: parseInt(tmp + 2000),
+          month: Math.floor(12 * (tmp - parseInt(tmp)) * (tmp < 0 ? -1 : 1))
+        };
+        let eduName  = decodeURI(eaj[i*4 + 2]);
+        let isEdu    = Boolean(parseInt(eaj[i*4 + 3]));
+        this.career.educationsAndJobs.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': eduName, 'isEdu': isEdu});
+      }
+      // Grant History
+      let grant = JSON.parse("[" + d[11].replaceAll('__', '"') + "]");
+      for(let i=0; i<parseInt(grant.length/4); i++) {
+        let grantItem = []
+        let tmp = parseFloat(grant[i*4]);
+        let yearFrom = {
+          year: parseInt(tmp + 2000),
+          month: Math.ceil(12 * (tmp - parseInt(tmp)) * (tmp < 0 ? -1 : 1))
+        };
+        tmp = parseFloat(grant[i*4 + 1]);
+        let yearTo   = {
+          year: parseInt(tmp + 2000),
+          month: Math.floor(12 * (tmp - parseInt(tmp)) * (tmp < 0 ? -1 : 1))
+        };
+        let grantName = decodeURI(grant[i*4 + 2]);
+        let isPI      = Boolean(parseInt(grant[i*4 + 3]));
+        this.career.grants.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': grantName, 'role': isPI ? 'principal' : 'coinvestigator'});
+      }
+      // Achievement History (paper)
+      let achievements = d[12].split(',');
+      for(let i=0; i<achievements.length; i++) {
+        let tmp = achievements[i].split('_');
+        for(let j=0; j<tmp.length; j++) {
+          let achvmntYear = String(j + this.chart.firstYear);
+          if(this.achievementTypeList[i] != undefined && tmp[j] != '') {
+            let [firstCorresp, other] = tmp[j].split('-');
+            firstCorresp = (firstCorresp == '') ? 0 : parseInt(firstCorresp);
+            other = (other == '') ? 0 : parseInt(other);
+            this.career.achievements[this.achievementTypeList[i]][achvmntYear] = {'firstCorresp': firstCorresp, 'first': 0, 'corresp': 0, 'other': other, 'total': firstCorresp + other};
+          }
+        }
+      }
+      this.career.events = [{ date: "", content: "" }];
+      if(d.length >= 14 && d[13] && d[13] !== "undefined") {
+        try {
+          const ev = JSON.parse("[" + d[13].replaceAll('__', '"') + "]");
+          const restored = [];
+          for(let i=0; i<parseInt(ev.length/2); i++) {
+            const pos = parseFloat(ev[i*2]);
+            const raw = (ev[i*2 + 1] != null) ? String(ev[i*2 + 1]) : "";
+            if(!isFinite(pos)) continue;
+
+            const content = decodeURI(raw);
+            const t = pos + 2000.0;
+            const y = Math.floor(t);
+            let m = Math.round((t - y) * 12);
+            if(m <= 0)  m = 1;
+            if(m >= 12) m = 12;
+
+            const mm = String(m).padStart(2, "0");
+            restored.push({ date: `${y}-${mm}`, content });
+          }
+          this.career.events = restored.length ? restored : [{ date: "", content: "" }];
+        } catch(e) {
+          this.career.events = [{ date: "", content: "" }];
+        }
+      }
+      this.updateCellWidth();
+      this.replotCareerChart();
+    }
+  },
+  computed: {
+    systemVersion: function() { return 'v1.6.2'; }
+  }
+});
+
+function pruneCSS(doc, rootEl) {
+  const kept = [];
+  const keepBase = new Set([":root","html","body","*","*::before","*::after","*:before","*:after"]);
+
+  const split = s => s.split(",").map(x => x.trim()).filter(Boolean);
+  const stripPseudo = s => s
+    .replace(/::before|::after|:before|:after/gi, "")
+    .replace(/:hover|:active|:focus-visible|:focus|:visited|:link/gi, "")
+    .replace(/:disabled|:enabled|:checked|:target/gi, "")
+    .replace(/:first-child|:last-child|:nth-child\([^)]+\)/gi, "")
+    .replace(/:first-of-type|:last-of-type|:nth-of-type\([^)]+\)/gi, "")
+    .trim();
+
+  const match = (selectorText) => {
+    if (keepBase.has(selectorText)) return true;
+    for (const raw of split(selectorText)) {
+      if (keepBase.has(raw)) return true;
+      const s = stripPseudo(raw);
+      if (!s) return true;
+      try { if (rootEl.querySelector(s)) return true; }
+      catch (e) { return true; }
+    }
+    return false;
+  };
+
+  const handle = (rule) => {
+    const t = rule.type;
+    if (t === CSSRule.FONT_FACE_RULE || t === CSSRule.KEYFRAMES_RULE) return kept.push(rule.cssText);
+
+    if (t === CSSRule.MEDIA_RULE || t === (CSSRule.SUPPORTS_RULE || 12)) {
+      const inner = [];
+      for (const r of rule.cssRules) {
+        if (r.type === CSSRule.STYLE_RULE) { if (match(r.selectorText)) inner.push(r.cssText); }
+        else inner.push(r.cssText);
+      }
+      if (inner.length) {
+        const head = (t === CSSRule.MEDIA_RULE) ? `@media ${rule.conditionText}` : `@supports ${rule.conditionText}`;
+        kept.push(`${head}{${inner.join("")}}`);
+      }
+      return;
+    }
+
+    if (t === CSSRule.STYLE_RULE) { if (match(rule.selectorText)) kept.push(rule.cssText); return; }
+    kept.push(rule.cssText);
+  };
+
+  for (const sheet of Array.from(doc.styleSheets)) {
+    try {
+      const rules = sheet.cssRules;
+      if (!rules) continue;
+      for (const r of Array.from(rules)) handle(r);
+    } catch (e) {}
+  }
+
+  if (!kept.length) return Array.from(doc.querySelectorAll("style")).map(s => s.textContent || "").join("\n");
+  return kept.join("");
+}
+
+app.initialize();

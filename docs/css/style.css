@@ -1,0 +1,665 @@
+*,*::before,*::after{box-sizing:border-box}ul[class],ol[class]{padding:0}body,h1,h2,h3,h4,p,ul[class],ol[class],figure,blockquote,dl,dd{margin:0}html{scroll-behavior:smooth}body{min-height:100vh;text-rendering:optimizeSpeed;line-height:1.5}ul[class],ol[class]{list-style:none}a:not([class]){text-decoration-skip-ink:auto}img,picture{max-width:100%;display:block}article>*+*{margin-top:1em}input,button,textarea,select{font:inherit}@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important}}
+* {
+  font-feature-settings: "palt";
+  font-family: "Noto Sans JP", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+h1, h2, h3, h1 *, h2 *, h3 * {
+  font-weight: 600;
+}
+:root {
+  --col-width: 50px;
+  --row-width: 50px;
+  --chart-header-position: 0px;
+  --color-blue: #007dc5;
+  --color-orange: #f7941e;
+  --color-red: #c41425;
+  --color-green: #479b96;
+  --color-purple: #762283;
+}
+.clearfix::after {
+   content: "";
+   display: block;
+   clear: both;
+}
+.ic:before {
+  font-family: 'Material Symbols Outlined';
+  position: relative;
+  font-weight: 300;
+  font-style: normal;
+  font-size: 24px;
+  display: inline-block;
+  line-height: 0.75;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+}
+
+.ic-16:before {
+  font-size: 16px;
+  top: 2px;
+  padding-right: 4px;
+}
+
+.ic-20:before {
+  font-size: 20px;
+  top: 3px;
+  padding-right: 5px;
+}
+
+.ic-24:before {
+  font-size: 24px;
+  top: 4px;
+  padding-right: 6px;
+}
+
+.ic.ic-github:before    { content: "code"; top: 5px; }
+.ic.ic-file:before      { content: "file_open"; margin-left: -2px; }
+.ic.ic-add-event:before { content: "format_list_bulleted_add"; }
+.ic.ic-remove:before    { content: "close"; top: 3px; margin-left: -2px; }
+
+.app {
+  overflow-x: hidden;
+}
+.app > header {
+  position: fixed;
+  z-index: 100;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 50px;
+  background: #333;
+}
+.app > header h1 {
+  float: left;
+  font-size: 1.2em;
+  line-height: 40px;
+  padding: 5px 20px;
+  color: white;
+}
+.app > header nav ul {
+  padding: 0;
+  margin: 0;
+  float: right;
+}
+.app > header nav ul li {
+  display: inline-block;
+}
+.app > header nav ul li a {
+  display: block;
+  padding: 10px 20px;
+  line-height: 30px;
+  color: white;
+  text-decoration: none;
+}
+.app > section {
+  padding: 15px 30px 30px;
+}
+.app > section h2 {
+  position: relative;
+  font-size: 1.2em;
+  margin: 0 0 10px;
+}
+.app > section h2:before {
+  content: "";
+  position: absolute;
+  left: -30px;
+  top: 0;
+  bottom: 0;
+  border: 1px solid #333;
+  border-width: 0 0 0 18px;
+}
+section.file-select-container {
+  display: block;
+  margin: 50px 0 0;
+  background: white;
+  border: 1px dotted #ccc;
+  border-width: 0 0 1px;
+}
+section.file-select-container .file-select-buttons {
+  padding: 5px 0 0;
+}
+section.file-select-container input {
+  display: none;
+}
+section.file-select-container label {
+  display: inline-block;
+  margin: 4px 16px;
+  padding: 7px 14px;
+  background: var(--color-blue);
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+section.file-select-container label:hover {
+  opacity: 0.7;
+}
+section.file-select-container p.selected-file-name {
+  position: relative;
+  display: inline-block;
+  padding: 7px 200px 7px 14px;
+  margin: 4px 16px;
+  background: #ddd;
+  border-radius: 5px;
+  cursor: pointer;
+}
+section.file-select-container p.selected-file-name:hover {
+  opacity: 0.7;
+}
+section.file-select-container p.selected-file-name span {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  padding: 7px 14px;
+  background: var(--color-blue);
+  border-radius: 0 5px 5px 0;
+  color: white;
+}
+section.career-event-editor {
+  background: white;
+  border: 1px dotted #ccc;
+  border-width: 0 0 1px;
+}
+section.career-event-editor h2 {
+  margin-bottom: 10px;
+}
+section.career-event-editor .career-event-form {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+section.career-event-editor .career-event-row {
+  display: grid;
+  grid-template-columns: 150px 1fr 70px;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 3px 10px;
+  border: 1px solid #ddd;
+  border-width: 0 0 1px;
+  background: white;
+}
+section.career-event-editor .career-event-row input[type="month"] {
+  width: 150px;
+  min-width: 150px;
+  height: 33px;
+  padding: 3px 8px;
+  font-size: 0.95em;
+  line-height: 1.2;
+  border: none;
+}
+section.career-event-editor .career-event-row input[type="text"] {
+  width: 100%;
+  min-width: 0;
+  height: 33px;
+  padding: 3px 8px;
+  font-size: 0.9em;
+  line-height: 1.2;
+  border: none;
+}
+section.career-event-editor .career-event-remove {
+  justify-self: end;
+  padding: 5px 10px;
+  font-size: 0.8em;
+  color: white;
+  background: var(--color-red);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+section.career-event-editor .career-event-remove:hover {
+  opacity: 0.7;
+}
+section.career-event-editor .career-event-add {
+  align-self: flex-start;
+  margin: 16px 16px 4px;
+  padding: 7px 14px;
+  background: var(--color-blue);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+section.career-event-editor .career-event-add:hover {
+  opacity: 0.7;
+}
+section.career-event-editor input:focus {
+  outline: none;
+  border-color: #6b82ff;
+  box-shadow: 0 0 0 2px rgba(107,130,255,0.2);
+}
+section.chart-setting-container {
+  border: 1px dotted #ccc;
+  border-width: 0 0 1px;
+}
+section.chart-setting-container input[type="range"],
+section.chart-setting-container input[type="checkbox"]  {
+  accent-color: var(--color-blue);
+}
+section.chart-setting-container dl {
+  margin: 0 0 0 10px;
+}
+section.chart-setting-container dl dt {
+  float: left;
+  width: 100px;
+  padding: 5px 0;
+  min-height: 36px;
+}
+section.chart-setting-container dl dd {
+  margin: 0 0 0 100px;
+  padding: 5px 0;
+  min-height: 36px;
+}
+section.chart-setting-container dl dd ul {
+  margin: 0 0 -5px;
+  padding: 0;
+}
+section.chart-setting-container dl dd ul li {
+  float: left;
+  list-style: none;
+  margin: 0 20px 0 0;
+}
+section.career-chart-container {
+}
+.career-chart-empty {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  width: calc(100vw - 60px);
+  height: 200px;
+}
+.career-chart-empty label {
+  display: block;
+  line-height: 200px;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  color: gray;
+  cursor: pointer;
+}
+.career-chart-empty label:hover {
+  background: #eee;
+}
+.career-chart {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  width: calc(100vw - 60px);
+  overflow-x: auto;
+}
+.career-chart-wrap {
+  position: relative;
+  display: block;
+  margin: 30px 50px 20px;
+  width: var(--row-width);
+}
+.year-background {
+  position: absolute;
+  top: 75px;
+  left: 0;
+  display: flex;
+  height: calc(100% - 75px);
+  z-index: 0; /* 背景に回す */
+  pointer-events: none;
+}
+.year-bg-cell {
+  width: calc(var(--col-width) - 4px);
+  margin-right: 4px; /* year-cell と揃える */
+}
+.year-bg-cell.even {
+  background: #f9f9f9;
+}
+.researcher-info,
+.achievement-chart,
+.grant-chart,
+.edujob-chart,
+.year-chart {
+  padding: 10px 0;
+  position: relative;
+  z-index: 10;
+}
+.career-chart h3 {
+  display: block;
+  position: absolute;
+  z-index: 20;
+  top: 0;
+  left: calc(var(--chart-header-position) - 10px);
+  width: 300px;
+  height: calc(100% - 10px);
+  font-size: 1em;
+}
+.career-chart h3:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -10px;
+  height: 100%;
+  width: 2px;
+  border: 1px dotted #ddd;
+  border-width: 0 0 0 2px;
+}
+.achievement-chart h3        { color:        var(--color-purple); opacity: 0.9; }
+.achievement-chart h3:before { border-color: var(--color-purple); opacity: 0.6; }
+.grant-chart h3              { color:        var(--color-green); opacity: 1; }
+.grant-chart h3:before       { border-color: var(--color-green); opacity: 0.7; }
+.edujob-chart h3             { color:        var(--color-blue); opacity: 1; }
+.edujob-chart h3:before      { border-color: var(--color-blue); opacity: 0.7; }
+
+.career-chart h3 span {
+  display: inline-block;
+  background: white;
+  padding: 3px 10px;
+}
+.researcher-info {
+  margin: 0;
+  height: 75px;
+}
+.researcher-info h3 {
+  width: 100%;
+  font-size: 1.3em;
+}
+.researcher-info h3 p {
+  display: block;
+  font-size: 0.8em;
+  font-weight: normal;
+}
+.achievement-row {
+  position: relative;
+  z-index: 1;
+  height: 100px;
+  min-height: 50px;
+  padding: 20px 0 0;
+}
+.achievement-col {
+  float: left;
+  display: flex;
+  flex-direction: column-reverse;
+  width: calc(var(--col-width) - 4px);
+  height: 100%;
+  margin: 0 4px 0 0;
+}
+.achievement-cell {
+  width: 100%;
+  height: 5px;
+  margin: 1px 0 0;
+  align-self: flex-end;
+}
+.achievement-cell.item-first-or-corresp { background: var(--color-purple); opacity: 0.8; }
+.achievement-cell.item-other            { background: var(--color-purple); opacity: 0.4; }
+.grant-row,
+.edujob-row {
+  position: relative;
+  z-index: 1;
+  height: 30px;
+}
+.grant-cell,
+.edujob-cell {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  height: 25px;
+  padding: 0 2px 8px;
+  font-size: 0.8em;
+  line-height: 1em;
+  overflow: hidden;
+}
+.grant-cell:after,
+.edujob-cell:after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1px solid transparent;
+  border-width: 0 0 5px;
+}
+.grant-cell.isPI:after      { border-color: var(--color-green); opacity: 1; }
+.grant-cell.isnotPI:after   { border-color: var(--color-green); opacity: 0.5; }
+.edujob-cell.job-cell:after { border-color: var(--color-blue); opacity: 1; }
+.edujob-cell.edu-cell:after { border-color: var(--color-blue); opacity: 0.5; }
+.grant-cell span,
+.edujob-cell span {
+  display: inline-block;
+  margin: 0 auto;
+  align-self: flex-end;
+  text-align: left;
+  white-space: nowrap;
+}
+.grant-cell:hover,
+.edujob-cell:hover {
+  overflow: visible;
+  z-index: 10;
+  cursor: pointer;
+  font-weight: bold;
+  color: var(--color-orange);
+}
+.grant-cell:hover:after,
+.edujob-cell:hover:after {
+  border-color: var(--color-orange);
+  opacity: 1;
+}
+.grant-cell:hover span,
+.edujob-cell:hover span {
+  background: white;
+  box-shadow: 0 0 0 2px white;
+}
+.career-event-chart {
+  position: relative;
+  z-index: 10;
+  padding: 10px 0;
+}
+.career-event-chart .career-event-row {
+  position: relative;
+  z-index: 1;
+  height: 30px;
+}
+.career-event-chart .career-event-cell {
+  position: absolute;
+  z-index: 9;
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 8px 0 10px;
+  font-size: 0.85em;
+  line-height: 1em;
+  white-space: nowrap;
+  background: white;
+  box-shadow: 0 0 0 4px white;
+  overflow-y: visible;
+}
+.career-event-chart .career-event-cell:before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 50px;
+  border-left: 2px solid #666;
+}
+.career-event-chart .career-event-cell:hover {
+  overflow: visible;
+  z-index: 10;
+  cursor: pointer;
+  font-weight: bold;
+  background: #666;
+  color: white;
+}
+.year-cell {
+  float: left;
+  display: block;
+  width: calc(var(--col-width) - 4px);
+  margin: 0 4px 0 0;
+  padding: 5px 0;
+  font-size: 0.8em;
+  line-height: 1em;
+  text-align: center;
+  border: 1px solid #999;
+}
+.year-cell.even {
+  border: 1px solid #666;
+}
+.year-chart.top .year-cell {
+  border-width: 0 0 5px;
+}
+.year-chart.bottom .year-cell {
+  border-width: 5px 0 0;
+}
+.year-cell.now {
+  width: calc(var(--col-width) * 2);
+  border: 1px solid #ccc;
+  border-width: 5px 0 0;
+}
+.year-cell.now span {
+  visibility: hidden;
+}
+.export-chart ul {
+  padding: 0;
+  margin: 10px 0;
+}
+.export-chart ul li {
+  display: inline-block;
+  color: white;
+  margin: 10px 5px 5px 0;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 0.9em;
+  cursor: pointer;
+}
+.export-chart ul li:hover {
+  opacity: 0.7;
+}
+.copy-chart-url {
+  background: #333;
+}
+.share-chart-to-X {
+  background: #333;
+}
+.embed-chart {
+  background: var(--color-blue);
+}
+.print-chart {
+  background: var(--color-green);
+}
+.export-html {
+  background: var(--color-red);
+}
+.export-chart textarea {
+  border: 0;
+  height: 40px;
+  width: 100%;
+  padding: 10px;
+  line-height: 20px;
+  background: #eee;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+footer {
+  position: relative;
+  padding: 20px 30px;
+  background: #eee;
+  color: black;
+  word-break: break-all;
+}
+footer h2 {
+  font-size: 1.2em;
+}
+footer a {
+  color: var(--color-blue);
+}
+footer p {
+  padding: 10px 20px 0;
+  font-size: 0.9rem;
+}
+footer p + h2 {
+  margin: 30px 0 0;
+}
+footer .content {
+  float: left;
+  margin: 25px 0;
+  width: calc(100% - 570px);
+}
+footer .content dl {
+  margin: 15px 10px;
+  line-height: 1.1rem;
+}
+footer .content dl dt {
+  color: #999;
+  font-size: 0.8rem;
+  padding: 0 8px;
+  margin: 14px 0 2px;
+}
+footer .content dl dd {
+  padding: 2px 8px;
+  font-size: 0.9rem;
+}
+footer .original-tweet {
+  float: right;
+  padding: 5px;
+}
+@media (max-width: 960px) {
+  footer .content {
+    float: none;
+    width: 100%;
+  }
+  footer .original-tweet {
+    float: none;
+    margin: 0 auto;
+  }
+}
+footer .release-note {
+  margin: 20px 0;
+  width: 100%;
+}
+footer .release-note dl {
+  margin: 15px 10px;
+  line-height: 1.1rem;
+}
+footer .release-note dl dt {
+  color: #999;
+  font-size: 0.8rem;
+  padding: 0 8px;
+}
+footer .release-note dl dd {
+  padding: 0 8px 8px;
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  border: 1px dotted #ccc;
+  border-width: 0 0 1px;
+}
+footer .credit {
+  padding: 15px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #999;
+}
+
+.app.embed header,
+.app.embed footer,
+.app.embed .file-select-container,
+.app.embed .career-event-editor,
+.app.embed .chart-setting-container,
+.app.embed .career-chart-container h2,
+.app.embed .export-chart,
+.app.print header,
+.app.print footer,
+.app.print .file-select-container,
+.app.print .career-event-editor,
+.app.print .chart-setting-container,
+.app.print .career-chart-container h2,
+.app.print .export-chart {
+  display: none;
+}
+.app.embed .career-chart-container,
+.app.print .career-chart-container {
+  padding: 0px;
+}
+.app.embed .career-chart,
+.app.print .career-chart {
+  width: 100vw;
+  border: none;
+}
+.app.print .career-chart-wrap {
+  min-height: calc(100vh - 50px);
+}
