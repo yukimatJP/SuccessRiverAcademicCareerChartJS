@@ -68,6 +68,7 @@ var app = new Vue({
         domesticConf: [],
       },
       events: [],
+      eventRowHeight: 30,
     },
     achievementTypeList: ['journal', 'intlConf', 'domesticConf'],
     achievementNameList: {'journal': '論文誌・ジャーナル', 'intlConf': '国際会議プロシーディングス', 'domesticConf': '国内研究会・シンポジウム'},
@@ -498,6 +499,7 @@ var app = new Vue({
         this.chart.events.push(it);
         this.updateCareerPeriod(it.year, it.year);
       }
+      this.$nextTick(this.layoutCareerEvents);
     },
     replotCareerChart() {
       // save display options
@@ -534,13 +536,40 @@ var app = new Vue({
       return {
         year: y,
         pos: pos,
-        label: label
+        label: label,
+        level: 0,
+        zIndex: 1000000 - Math.round(pos * 12)
       };
     },
     getEventCellStyle(item) {
+      const level = Number(item.level) || 0;
       return {
-        left: (this.chart.settings.cellWidth * (item.pos - this.chart.firstYear)) + "px"
+        left: (this.chart.settings.cellWidth * (item.pos - this.chart.firstYear)) + "px",
+        bottom: (level * 30) + "px",
+        zIndex: item.zIndex,
+        "--event-line-height": (44 + level * 30) + "px"
       };
+    },
+    layoutCareerEvents() {
+      const cells = Array.from(document.querySelectorAll(".career-event-cell"));
+      if (!cells.length) {
+        this.chart.eventRowHeight = 30;
+        return;
+      }
+
+      const laneLeftEdges = [];
+      const gap = 8;
+      // Lay out newer events first so older overlapping events move upward.
+      for (let i = cells.length - 1; i >= 0; i--) {
+        const cell = cells[i];
+        const left = cell.offsetLeft;
+        const right = left + cell.offsetWidth;
+        let level = laneLeftEdges.findIndex(edge => right + gap <= edge);
+        if (level === -1) level = laneLeftEdges.length;
+        laneLeftEdges[level] = left;
+        this.chart.events[i].level = level;
+      }
+      this.chart.eventRowHeight = Math.max(30, laneLeftEdges.length * 30);
     },
     updateCellWidth() {
       // save display options

@@ -475,12 +475,11 @@ section.career-chart-container {
   position: absolute;
   top: 0;
   left: 0;
-  height: 50px;
+  height: var(--event-line-height, 50px);
   border-left: 2px solid #666;
 }
 .career-event-chart .career-event-cell:hover {
   overflow: visible;
-  z-index: 10;
   cursor: pointer;
   font-weight: bold;
   background: #666;

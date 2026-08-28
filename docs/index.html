@@ -166,7 +166,7 @@
       </div>
       <div class="career-event-chart" v-if="chart.events && chart.events.length">
         <h3><span>キャリアイベント</span></h3>
-        <div class="career-event-row">
+        <div class="career-event-row" :style="{ height: chart.eventRowHeight + 'px' }">
           <span class="career-event-cell"
                 v-for="(item, i) in chart.events"
                 :style="getEventCellStyle(item)">
