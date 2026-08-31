@@ -57,7 +57,9 @@ var app = new Vue({
           intlConf:     true,
           domesticConf: true,
           notFirstCorrespAchievement: true,
+          notReviewedAchievement: true,
           notPIgrants:  true,
+          notKakenhiGrants: true,
         }
       },
       educationsAndJobs: [],
@@ -74,6 +76,12 @@ var app = new Vue({
     achievementNameList: {'journal': '論文誌・ジャーナル', 'intlConf': '国際会議プロシーディングス', 'domesticConf': '国内研究会・シンポジウム'},
     exportedChartURL: '',
     importData: '',
+    careerEventLayoutFrame: null,
+  },
+  beforeDestroy: function() {
+    if (this.careerEventLayoutFrame !== null) {
+      cancelAnimationFrame(this.careerEventLayoutFrame);
+    }
   },
   methods: {
     initialize: function() {
@@ -101,7 +109,9 @@ var app = new Vue({
             intlConf:     Boolean(this.chart.settings.visibility.intlConf),
             domesticConf: Boolean(this.chart.settings.visibility.domesticConf),
             notFirstCorrespAchievement: Boolean(this.chart.settings.visibility.notFirstCorrespAchievement),
+            notReviewedAchievement: Boolean(this.chart.settings.visibility.notReviewedAchievement),
             notPIgrants:  Boolean(this.chart.settings.visibility.notPIgrants),
+            notKakenhiGrants: Boolean(this.chart.settings.visibility.notKakenhiGrants),
           }
         };
         localStorage.setItem(DISPLAY_OPTION_LS_KEY, JSON.stringify(payload));
@@ -129,7 +139,9 @@ var app = new Vue({
           if ("intlConf" in v)     vis.intlConf = Boolean(v.intlConf);
           if ("domesticConf" in v) vis.domesticConf = Boolean(v.domesticConf);
           if ("notFirstCorrespAchievement" in v) vis.notFirstCorrespAchievement = Boolean(v.notFirstCorrespAchievement);
+          if ("notReviewedAchievement" in v) vis.notReviewedAchievement = Boolean(v.notReviewedAchievement);
           if ("notPIgrants" in v)  vis.notPIgrants = Boolean(v.notPIgrants);
+          if ("notKakenhiGrants" in v) vis.notKakenhiGrants = Boolean(v.notKakenhiGrants);
         }
       } catch (e) {
         console.warn("Failed to load display options:", e);
@@ -244,7 +256,13 @@ var app = new Vue({
                       : grant.research_project_owner_role == 'principal_investigator' ? 'principal'
                       : grant.research_project_owner_role == 'coinvestigator' ? 'coinvestigator'
                       : 'others';
-        this.career.grants.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': grantName, 'role': grantRole});
+        const offerOrganization = ('offer_organization' in grant)
+          ? (grant.offer_organization.ja || grant.offer_organization.en || '') : '';
+        const systemName = ('system_name' in grant)
+          ? (grant.system_name.ja || grant.system_name.en || '') : '';
+        const isKakenhi = offerOrganization.includes('日本学術振興会')
+          && systemName.includes('科学研究費助成事業');
+        this.career.grants.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': grantName, 'role': grantRole, 'isKakenhi': isKakenhi});
         this.updateCareerPeriod(yearFrom.year, yearTo.year);
       }
       // Achievement History (paper)
@@ -275,7 +293,10 @@ var app = new Vue({
         achvmntYear = this.getFinancialYear(achvmnt.publication_date).year;
 
         if(!(achvmntYear in this.career.achievements[achvmntType])) {
-          this.career.achievements[achvmntType][achvmntYear] = {firstCorresp:0, first:0, corresp:0, other:0, total:0};
+          this.career.achievements[achvmntType][achvmntYear] = {
+            firstCorresp: 0, first: 0, corresp: 0, other: 0, total: 0,
+            reviewed: {firstCorresp: 0, first: 0, corresp: 0, other: 0, total: 0}
+          };
         }
 
         let roleKey = (firstAuthorFlag && correspAuthorFlag) ? 'firstCorresp'
@@ -285,6 +306,10 @@ var app = new Vue({
 
         this.career.achievements[achvmntType][achvmntYear][roleKey]++;
         this.career.achievements[achvmntType][achvmntYear].total++;
+        if(achvmnt.referee === true) {
+          this.career.achievements[achvmntType][achvmntYear].reviewed[roleKey]++;
+          this.career.achievements[achvmntType][achvmntYear].reviewed.total++;
+        }
         this.career.achievements[achvmntType].total++;
         this.career.achievements.total++;
         this.updateCareerPeriod(achvmntYear, achvmntYear);
@@ -451,7 +476,8 @@ var app = new Vue({
       let grants = this.career.grants.sort((a, b) => a.yearFrom.year - b.yearFrom.year);
       for(let i=0; i<grants.length; i++) {
         let newItem = this.getGrantItem(grants[i]);
-        if(this.chart.settings.visibility.notPIgrants || newItem.isPI) {
+        if((this.chart.settings.visibility.notPIgrants || newItem.isPI)
+          && (this.chart.settings.visibility.notKakenhiGrants || newItem.isKakenhi)) {
           if(this.chart.grants.length == 0) {
             this.chart.grants.push([newItem]);
           } else {
@@ -477,6 +503,9 @@ var app = new Vue({
           let year = String(i);
           if(year in this.career.achievements[achvmntType]) {
             let achvmnt = this.career.achievements[achvmntType][year];
+            if(!this.chart.settings.visibility.notReviewedAchievement && achvmnt.reviewed) {
+              achvmnt = achvmnt.reviewed;
+            }
             let firstCorrespCount = achvmnt.firstCorresp + achvmnt.first + achvmnt.corresp;
             this.chart.achievements[achvmntType][year] = Array(firstCorrespCount).fill(1).concat(Array(achvmnt.other).fill(0));
           } else {
@@ -524,6 +553,7 @@ var app = new Vue({
         to:   parseFloat((item.yearTo.year   + item.yearTo.month   / 12.0).toFixed(2)),
         name: item.name,
         isPI: item.role == 'principal',
+        isKakenhi: Boolean(item.isKakenhi),
       };
     },
     getCareerEventItem(e) {
@@ -571,13 +601,31 @@ var app = new Vue({
       }
       this.chart.eventRowHeight = Math.max(30, laneLeftEdges.length * 30);
     },
+    scheduleCareerEventLayout() {
+      if (this.careerEventLayoutFrame !== null) {
+        cancelAnimationFrame(this.careerEventLayoutFrame);
+      }
+      this.careerEventLayoutFrame = requestAnimationFrame(() => {
+        this.careerEventLayoutFrame = null;
+        this.layoutCareerEvents();
+      });
+    },
     updateCellWidth() {
+      const cellWidth = Number(this.chart.settings.cellWidth);
+      if(!isFinite(cellWidth) || cellWidth < 30 || cellWidth > 200) return;
       // save display options
       this.saveDisplayOptions();
       // update cell width
       let root = document.documentElement;
-      root.style.setProperty('--col-width', this.chart.settings.cellWidth + "px");
-      root.style.setProperty('--row-width', this.chart.settings.cellWidth * (4 + this.chart.latestYear - this.chart.firstYear) + "px");
+      root.style.setProperty('--col-width', cellWidth + "px");
+      root.style.setProperty('--row-width', cellWidth * (4 + this.chart.latestYear - this.chart.firstYear) + "px");
+      this.scheduleCareerEventLayout();
+    },
+    normalizeCellWidth() {
+      const value = Number(this.chart.settings.cellWidth);
+      this.chart.settings.cellWidth = isFinite(value)
+        ? Math.min(200, Math.max(30, Math.round(value))) : 50;
+      this.updateCellWidth();
     },
     onScrollChart(e) {
       document.documentElement.style.setProperty('--chart-header-position', e.target.scrollLeft + "px");
@@ -614,6 +662,7 @@ var app = new Vue({
         eaj.push(tmp);
       }
       let grants = [];
+      let grantKakenhiFlags = [];
       for(let i=0; i<this.chart.grants.length; i++) {
         let tmp = [];
         for(let j=0; j<this.chart.grants[i].length; j++) {
@@ -624,6 +673,7 @@ var app = new Vue({
             "__" + data.name + "__",
             Number(data.isPI)
           ]);
+          grantKakenhiFlags.push(Number(data.isKakenhi));
         }
         grants.push(tmp);
       }
@@ -674,6 +724,9 @@ var app = new Vue({
         encodeURI(grants),
         encodeURI(achvmnt),
         encodeURI(events),
+        Number(this.chart.settings.visibility.notReviewedAchievement),
+        Number(this.chart.settings.visibility.notKakenhiGrants),
+        encodeURI(grantKakenhiFlags),
       ];
       this.exportedChartURL = 'https://career-chart.yukimat.jp/?chart=' + expJson.map(encodeURIComponent).join('...');
       setTimeout(() => {
@@ -794,6 +847,8 @@ var app = new Vue({
       }
       // Grant History
       let grant = JSON.parse("[" + d[11].replaceAll('__', '"') + "]");
+      let grantKakenhiFlags = (d.length >= 17 && d[16] && d[16] !== "undefined")
+        ? JSON.parse("[" + d[16] + "]") : [];
       for(let i=0; i<parseInt(grant.length/4); i++) {
         let grantItem = []
         let tmp = parseFloat(grant[i*4]);
@@ -808,7 +863,8 @@ var app = new Vue({
         };
         let grantName = decodeURI(grant[i*4 + 2]);
         let isPI      = Boolean(parseInt(grant[i*4 + 3]));
-        this.career.grants.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': grantName, 'role': isPI ? 'principal' : 'coinvestigator'});
+        let isKakenhi = (i < grantKakenhiFlags.length) ? Boolean(parseInt(grantKakenhiFlags[i])) : true;
+        this.career.grants.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': grantName, 'role': isPI ? 'principal' : 'coinvestigator', 'isKakenhi': isKakenhi});
       }
       // Achievement History (paper)
       let achievements = d[12].split(',');
@@ -820,7 +876,10 @@ var app = new Vue({
             let [firstCorresp, other] = tmp[j].split('-');
             firstCorresp = (firstCorresp == '') ? 0 : parseInt(firstCorresp);
             other = (other == '') ? 0 : parseInt(other);
-            this.career.achievements[this.achievementTypeList[i]][achvmntYear] = {'firstCorresp': firstCorresp, 'first': 0, 'corresp': 0, 'other': other, 'total': firstCorresp + other};
+            this.career.achievements[this.achievementTypeList[i]][achvmntYear] = {
+              'firstCorresp': firstCorresp, 'first': 0, 'corresp': 0, 'other': other, 'total': firstCorresp + other,
+              'reviewed': {'firstCorresp': firstCorresp, 'first': 0, 'corresp': 0, 'other': other, 'total': firstCorresp + other}
+            };
           }
         }
       }
@@ -848,6 +907,16 @@ var app = new Vue({
         } catch(e) {
           this.career.events = [{ date: "", content: "" }];
         }
+      }
+      if(d.length >= 15 && d[14] !== "" && d[14] !== "undefined") {
+        this.chart.settings.visibility.notReviewedAchievement = Boolean(parseInt(d[14]));
+      } else {
+        this.chart.settings.visibility.notReviewedAchievement = true;
+      }
+      if(d.length >= 16 && d[15] !== "" && d[15] !== "undefined") {
+        this.chart.settings.visibility.notKakenhiGrants = Boolean(parseInt(d[15]));
+      } else {
+        this.chart.settings.visibility.notKakenhiGrants = true;
       }
       this.updateCellWidth();
       this.replotCareerChart();

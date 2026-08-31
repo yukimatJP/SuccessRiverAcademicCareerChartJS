@@ -58,46 +58,78 @@
 <section class="chart-setting-container">
   <h2>③ 表示オプション</h2>
   <dl class="clearfix">
-    <dt>表示横幅</dt>
-    <dd>
-      <input type="range" min="30" max="200"
-             style="width: 200px"
-             v-model="chart.settings.cellWidth"
-             @input="updateCellWidth">
-      ${ chart.settings.cellWidth }px
-    </dd>
-    <dt>研究業績</dt>
-    <dd>
-      <ul class="clearfix">
-        <li v-for="(item, type) in achievementNameList">
-          <input type="checkbox"
-                 :id="'disp-setting-achievement' + type"
-                 v-model="chart.settings.visibility[type]"
-                 @change="replotCareerChart">
-          <label :for="'disp-setting-achievement' + type">${ item }</label>
-        </li>
-      </ul>
-    </dd>
-    <dd>
-      <ul class="clearfix">
-        <li>
-          <input type="checkbox" id="disp-setting-achievement-not-first-and-corresp"
-                 v-model="chart.settings.visibility.notFirstCorrespAchievement"
-                 @change="replotCareerChart">
-          <label for="disp-setting-achievement-not-first-and-corresp">主著・責任著者以外の業績</label>
-        </li>
-      </ul>
-    </dd>
-    <dt>獲得予算</dt>
-    <dd>
-      <ul class="clearfix">
-        <li>
-          <input type="checkbox" id="disp-setting-grants-notPI"
-                 v-model="chart.settings.visibility.notPIgrants"
-                 @change="replotCareerChart">
-          <label for="disp-setting-grants-notPI">代表研究者以外の予算</label>
-        </li>
-    </dd>
+    <div class="chart-setting-group">
+      <dt>表示横幅</dt>
+      <dd>
+        <input type="range" min="30" max="200"
+               style="width: 200px"
+               v-model.number="chart.settings.cellWidth"
+               @input="updateCellWidth">
+        <span class="cell-width-input">
+          <input type="number" class="cell-width-number" min="30" max="200" step="1"
+                 aria-label="表示横幅（ピクセル）"
+                 v-model.number="chart.settings.cellWidth"
+                 @input="updateCellWidth"
+                 @change="normalizeCellWidth">
+          <span class="cell-width-unit">px</span>
+        </span>
+      </dd>
+    </div>
+    <div class="chart-setting-group">
+      <dt>研究業績</dt>
+      <dd>
+        <ul class="clearfix">
+          <li v-for="(item, type) in achievementNameList">
+            <input type="checkbox"
+                   :id="'disp-setting-achievement' + type"
+                   v-model="chart.settings.visibility[type]"
+                   @change="replotCareerChart">
+            <label :for="'disp-setting-achievement' + type">${ item }</label>
+          </li>
+        </ul>
+      </dd>
+      <dd class="achievement-scope-option">
+        <span class="achievement-scope-heading">業績の表示範囲</span>
+        <div class="achievement-scope-controls">
+          <label class="toggle-switch" for="disp-setting-achievement-not-first-and-corresp">
+            <input type="checkbox" id="disp-setting-achievement-not-first-and-corresp"
+                   v-model="chart.settings.visibility.notFirstCorrespAchievement"
+                   @change="replotCareerChart">
+            <span class="toggle-switch-track" aria-hidden="true"></span>
+            <span class="toggle-switch-label">主著・責任著者以外の業績も表示する</span>
+          </label>
+          <label class="toggle-switch" for="disp-setting-achievement-not-reviewed">
+            <input type="checkbox" id="disp-setting-achievement-not-reviewed"
+                   v-model="chart.settings.visibility.notReviewedAchievement"
+                   @change="replotCareerChart">
+            <span class="toggle-switch-track" aria-hidden="true"></span>
+            <span class="toggle-switch-label">査読なし・査読情報未設定の業績も表示する</span>
+          </label>
+        </div>
+      </dd>
+    </div>
+    <div class="chart-setting-group">
+      <dt>獲得予算</dt>
+      <dd class="achievement-scope-option">
+        <span class="achievement-scope-heading">予算の表示範囲</span>
+        <div class="achievement-scope-controls">
+          <label class="toggle-switch" for="disp-setting-grants-notPI">
+            <input type="checkbox" id="disp-setting-grants-notPI"
+                   v-model="chart.settings.visibility.notPIgrants"
+                   @change="replotCareerChart">
+            <span class="toggle-switch-track" aria-hidden="true"></span>
+            <span class="toggle-switch-label">代表研究者以外の予算も表示する</span>
+          </label>
+          <label class="toggle-switch" for="disp-setting-grants-not-kakenhi">
+            <input type="checkbox" id="disp-setting-grants-not-kakenhi"
+                   v-model="chart.settings.visibility.notKakenhiGrants"
+                   @change="replotCareerChart">
+            <span class="toggle-switch-track" aria-hidden="true"></span>
+            <span class="toggle-switch-label">科研費以外の研究課題も表示する</span>
+          </label>
+        </div>
+      </dd>
+    </div>
   </dl>
 </section>
 <section class="career-chart-container">
