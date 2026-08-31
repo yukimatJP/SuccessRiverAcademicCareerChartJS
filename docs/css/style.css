@@ -793,6 +793,30 @@ footer .content dl dd {
   padding: 2px 8px;
   font-size: 0.9rem;
 }
+footer .content code {
+  display: block;
+  margin: 8px 0;
+  padding: 8px 10px;
+  color: #444;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9em;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+.release-note-open {
+  padding: 0;
+  color: var(--color-blue);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.release-note-open:hover {
+  opacity: 0.7;
+}
 footer .original-tweet {
   float: right;
   padding: 5px;
@@ -807,20 +831,60 @@ footer .original-tweet {
     margin: 0 auto;
   }
 }
-footer .release-note {
-  margin: 20px 0;
-  width: 100%;
+.release-note-dialog {
+  width: min(720px, calc(100vw - 40px));
+  max-height: 80vh;
+  padding: 0;
+  color: #222;
+  background: white;
+  border: 0;
+  border-radius: 8px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
 }
-footer .release-note dl {
-  margin: 15px 10px;
+.release-note-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+body.modal-open {
+  overflow: hidden;
+}
+.release-note-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.45);
+}
+.release-note-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 15px 20px;
+  background: white;
+  border-bottom: 1px solid #ddd;
+}
+.release-note-dialog-header button {
+  padding: 5px 8px;
+  color: #555;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.release-note-dialog-header button:hover {
+  color: var(--color-red);
+}
+.release-note-dialog dl {
+  min-height: 0;
+  margin: 0;
+  padding: 15px 30px 20px;
   line-height: 1.1rem;
+  overflow-y: auto;
 }
-footer .release-note dl dt {
+.release-note-dialog dl dt {
   color: #999;
   font-size: 0.8rem;
   padding: 0 8px;
 }
-footer .release-note dl dd {
+.release-note-dialog dl dd {
   padding: 0 8px 8px;
   margin: 0 0 8px;
   font-size: 0.95rem;

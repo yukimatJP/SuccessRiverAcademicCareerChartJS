@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=arrow_back,close,code,file_open,format_list_bulleted_add,print" rel="stylesheet" />
-<link rel="stylesheet" href="css/style.css?v=1.7.1">
+<link rel="stylesheet" href="css/style.css?v=1.7.2">
 <div class="app" id="app" :class="{embed: isEmbeddingMode, print:isPrintingMode}">
 <header class="clearfix">
   <h1>SuccessRiver AcademicCareerChart (${ systemVersion })</h1>
@@ -251,6 +251,7 @@
       <h2>◆ このページについて</h2>
       <p>
         「SuccessRiver AcademicCareerChart (${ systemVersion })」は、<a href="https://x.com/rei_nari">@rei_nari</a>さん考案のキャリアイベント図をresearchmapに登録された情報から生成します。
+        researchmap の「研究者・業績エクスポート」機能を使用して出力したファイル（.jsonl）を読み込むだけで、キャリアイベント図を作成することができます。
       </p>
       <p>
         このシステムは、各種設定の一時保存のため LocalStorage を使用します。
@@ -262,19 +263,32 @@
         <dt>制作者</dt>
         <dd>松田裕貴（<a href="https://x.com/yukimatJP">@yukimatJP</a>）</dd>
         <dd>岡山大学 コンヴィヴィアルコンピューティング研究室（<a href="https://x.com/cocolabJP">@cocolabJP</a>）</dd>
-        <dt>ライセンス</dt>
+        <dt>システムのライセンス</dt>
         <dd> CC-BY-NC 4.0</dd>
         <dd><a href="https://creativecommons.org/licenses/by-nc/4.0/">https://creativecommons.org/licenses/by-nc/4.0/</a></dd>
         <dd><img src="img/cc-by-nc.png" style="width: 120px;"></dd>
+        <dt>出力データの利用について</dt>
+        <dd>
+          本システムで生成されたキャリアイベント図を利用する際に、制作者への連絡やクレジットの表記は不要です。
+          なお、クレジットを表記いただける場合には、<code>このキャリアイベント図は、&lt;a href="https://career-chart.yukimat.jp/"&gt;SuccessRiver AcademicCareerChart (${ systemVersion }) by @yukimatJP&lt;/a&gt; を用いて作成されました。</pre></code> といった形で紹介ください。
+          また、SNSなどでこのシステムを紹介いただくのも大歓迎します。
+        </dd>
+        <dt>リリースノート</dt>
+        <dd><button type="button" class="release-note-open" @click="openReleaseNotes">更新履歴を表示する</button></dd>
       </dl>
     </div>
     <div class="original-tweet">
       <blockquote class="twitter-tweet"><p lang="ja" dir="ltr">キャリア形成について話す機会があった時に、キャリアイベントとライフイベントを並べた図を作成したのだけれど、研究メインのものとして、ライフイベントの代わりに学生指導状況という項目を作りつつ、色々と情報を更新した。こういう年表を作り更新することで、自身の状況を俯瞰的に捉えておきたい <a href="https://t.co/1RDY98i4jj">pic.twitter.com/1RDY98i4jj</a></p>&mdash; サクセスリバーコーテシーinエイトプリンス (@rei_nari) <a href="https://twitter.com/rei_nari/status/1691102017153114112?ref_src=twsrc%5Etfw">August 14, 2023</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
     </div>
   </div>
-  <div class="release-note">
-    <h2>◇ リリースノート</h2>
+  <dialog class="release-note-dialog" ref="releaseNoteDialog" @click.self="closeReleaseNotes" @close="onReleaseNotesClosed">
+    <div class="release-note-dialog-header">
+      <h2>リリースノート</h2>
+      <button type="button" class="ic ic-20 ic-remove" aria-label="閉じる" @click="closeReleaseNotes">閉じる</button>
+    </div>
     <dl>
+      <dt>2026/08/31 (v1.7.2)</dt>
+      <dd>出力データのライセンスについて明記しました。</dd>
       <dt>2026/08/31 (v1.7.1)</dt>
       <dd>researchmapのエクスポートファイルを検査し、改善点があれば指摘する機能を追加しました。</dd>
       <dt>2026/08/31 (v1.7)</dt>
@@ -306,12 +320,12 @@
       <dt>2023/08/19（v1.0）</dt>
       <dd>本システムは週末ひとりハッカソンの成果のため、対応していない部分が多々あります（そもそも、自分のresearchmapの使い方が間違えてる部分もありそう）。予算や学歴・職歴のラベルに関してはもう少しいい感じにしたいところです。</dd>
     </dl>
-  </div>
+  </dialog>
   <div class="credit">
     <small>SuccessRiver AcademicCareerChart (${ systemVersion }) by Yuki Matsuda, CC-BY-NC 4.0</small>
   </div>
 </footer>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js"></script>
-<script src="js/main.js?v=1.7.1"></script>
+<script src="js/main.js?v=1.7.2"></script>
 </html>

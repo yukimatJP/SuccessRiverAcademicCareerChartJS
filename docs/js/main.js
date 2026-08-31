@@ -701,6 +701,20 @@ var app = new Vue({
     printPage() {
       window.print();
     },
+    openReleaseNotes() {
+      const dialog = this.$refs.releaseNoteDialog;
+      if(dialog && !dialog.open) {
+        document.body.classList.add('modal-open');
+        dialog.showModal();
+      }
+    },
+    closeReleaseNotes() {
+      const dialog = this.$refs.releaseNoteDialog;
+      if(dialog && dialog.open) dialog.close();
+    },
+    onReleaseNotesClosed() {
+      document.body.classList.remove('modal-open');
+    },
     async exportHTML() {
       const src = document.querySelector(".career-chart-container");
       const sc = document.querySelector(".career-chart");
@@ -909,7 +923,7 @@ var app = new Vue({
         }
       ].filter(suggestion => suggestion.items.length > 0);
     },
-    systemVersion: function() { return 'v1.7.1'; }
+    systemVersion: function() { return 'v1.7.2'; }
   }
 });
 
