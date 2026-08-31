@@ -62,6 +62,8 @@ h1, h2, h3, h1 *, h2 *, h3 * {
 .ic.ic-file:before      { content: "file_open"; margin-left: -2px; }
 .ic.ic-add-event:before { content: "format_list_bulleted_add"; }
 .ic.ic-remove:before    { content: "close"; top: 3px; margin-left: -2px; }
+.ic.ic-back:before      { content: "arrow_back"; }
+.ic.ic-print:before     { content: "print"; }
 
 .app {
   overflow-x: hidden;
@@ -96,6 +98,9 @@ h1, h2, h3, h1 *, h2 *, h3 * {
   line-height: 30px;
   color: white;
   text-decoration: none;
+}
+.app > header nav ul li a:hover {
+  background: rgba(255, 255, 255, 0.12);
 }
 .app-layout {
   display: grid;
@@ -422,6 +427,19 @@ section.chart-setting-container dl dd.achievement-scope-option {
   font-size: 0.9em;
 }
 section.career-chart-container {
+  position: relative;
+}
+.chart-as-of-date {
+  position: absolute;
+  z-index: 30;
+  top: 77px;
+  right: 42px;
+  padding: 3px 7px;
+  color: #777;
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 0.8em;
+  white-space: nowrap;
+  pointer-events: none;
 }
 .career-chart-empty {
   border: 1px solid #ddd;
@@ -698,24 +716,42 @@ section.career-chart-container {
 .export-html {
   background: var(--color-red);
 }
-.exit-print-mode {
+.print-mode-header {
+  display: none;
   position: fixed;
   z-index: 100;
-  top: 12px;
-  right: 16px;
-  padding: 7px 12px;
-  color: white;
-  background: rgba(51, 51, 51, 0.85);
-  border: 0;
-  border-radius: 5px;
-  cursor: pointer;
-}
-.exit-print-mode:hover {
+  top: 0;
+  left: 0;
+  align-items: center;
+  justify-content: space-between;
+  width: 100vw;
+  height: 50px;
+  padding: 0 10px;
   background: #333;
 }
+.app.print .print-mode-header {
+  display: flex;
+}
+.print-mode-header button {
+  height: 50px;
+  padding: 0 14px;
+  color: white;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.print-mode-header button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
 @media print {
-  .exit-print-mode {
+  .print-mode-header {
     display: none !important;
+  }
+  .app.print .app-layout {
+    margin-top: 0 !important;
+  }
+  .app.print .career-chart-wrap {
+    min-height: 100vh !important;
   }
 }
 footer {
@@ -820,10 +856,18 @@ footer .credit {
 .app.print .career-chart-container {
   padding: 0px;
 }
-.app.embed .app-layout,
-.app.print .app-layout {
+.app.embed .chart-as-of-date,
+.app.print .chart-as-of-date {
+  top: 62px;
+  right: 12px;
+}
+.app.embed .app-layout {
   display: block;
   margin-top: 0;
+}
+.app.print .app-layout {
+  display: block;
+  margin-top: 50px;
 }
 .app.embed .career-chart,
 .app.print .career-chart {
@@ -832,5 +876,5 @@ footer .credit {
   border-radius: 0;
 }
 .app.print .career-chart-wrap {
-  min-height: 100vh;
+  min-height: calc(100vh - 50px);
 }

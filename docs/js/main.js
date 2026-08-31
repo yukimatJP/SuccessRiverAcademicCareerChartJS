@@ -27,6 +27,7 @@ var app = new Vue({
     isPrintingMode:  false,
     rmFile: null,
     rmJson: null,
+    sourceDateLabel: '',
     researcher: {
       permalink: '',
       name: {
@@ -160,6 +161,7 @@ var app = new Vue({
         return;
       }
       this.rmFile = f;
+      this.sourceDateLabel = this.getSourceDateLabel(f);
       const reader = new FileReader();
       reader.readAsText(this.rmFile);
       reader.onload = () => {
@@ -171,6 +173,7 @@ var app = new Vue({
     clearCareerChart: function() {
       this.rmFile = null;
       this.rmJson = null;
+      this.sourceDateLabel = '';
 
       this.importData = '';
 
@@ -328,6 +331,22 @@ var app = new Vue({
       let year  = (dt.length > 0) ? parseInt(dt[0]) : new Date().getFullYear();
       let month = (dt.length > 1) ? parseInt(dt[1]) : isFrom ? 4 : 3;
       return {'year': year, 'month': month}
+    },
+    getSourceDateLabel(file) {
+      const match = String(file.name || '').match(/(?:^|\D)(20\d{2})(\d{2})(\d{2})(?:\D|$)/);
+      let date = null;
+      if(match) {
+        const year = Number(match[1]);
+        const month = Number(match[2]);
+        const day = Number(match[3]);
+        const candidate = new Date(year, month - 1, day);
+        if(candidate.getFullYear() === year && candidate.getMonth() === month - 1 && candidate.getDate() === day) {
+          date = candidate;
+        }
+      }
+      if(!date && Number(file.lastModified)) date = new Date(file.lastModified);
+      if(!date || !isFinite(date.getTime())) return '';
+      return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日時点`;
     },
     updateCareerPeriod(yearFrom, yearTo) {
       if(this.chart.firstYear  > yearFrom) { this.chart.firstYear  = yearFrom; }
@@ -678,6 +697,9 @@ var app = new Vue({
     exitPrintMode() {
       this.isPrintingMode = false;
       this.$nextTick(this.scheduleCareerEventLayout);
+    },
+    printPage() {
+      window.print();
     },
     async exportHTML() {
       const src = document.querySelector(".career-chart-container");

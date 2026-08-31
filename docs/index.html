@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=code,file_open,format_list_bulleted_add,close" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=arrow_back,close,code,file_open,format_list_bulleted_add,print" rel="stylesheet" />
 <link rel="stylesheet" href="css/style.css?v=1.7.1">
 <div class="app" id="app" :class="{embed: isEmbeddingMode, print:isPrintingMode}">
 <header class="clearfix">
@@ -21,6 +21,10 @@
     </ul>
   </nav>
 </header>
+<div class="print-mode-header" v-if="isPrintingMode">
+  <button type="button" class="ic ic-20 ic-back" @click="exitPrintMode">編集画面に戻る</button>
+  <button type="button" class="ic ic-20 ic-print" @click="printPage">印刷する</button>
+</div>
 <main class="app-layout">
 <div class="app-controls">
 <section class="file-select-container">
@@ -152,6 +156,7 @@
 </section>
  </div>
 <section class="career-chart-container">
+  <p class="chart-as-of-date" v-if="sourceDateLabel">${ sourceDateLabel }</p>
   <div class="career-chart-empty" v-if="!chart.latestYear"><label for="researchmap-file-input"><span class="ic ic-20 ic-file">ファイルを選択してください</span></label></div>
   <div class="career-chart" v-if="chart.latestYear" @scroll="onScrollChart">
     <div class="career-chart-wrap" id="career-chart-wrap">
@@ -238,7 +243,6 @@
       <li class="export-html" @click="exportHTML">HTMLファイルをエクスポート</li>
     </ul>
   </nav>
-  <button type="button" class="exit-print-mode" v-if="isPrintingMode" @click="exitPrintMode">通常表示に戻る</button>
 </section>
 </main>
 <footer class="clearfix">
@@ -304,7 +308,7 @@
     </dl>
   </div>
   <div class="credit">
-    <small>SuccessRiver AcademicCareerChart (${ systemVersion }) by Yuki Matsuda, CC-BY-SA 4.0</small>
+    <small>SuccessRiver AcademicCareerChart (${ systemVersion }) by Yuki Matsuda, CC-BY-NC 4.0</small>
   </div>
 </footer>
 </div>
