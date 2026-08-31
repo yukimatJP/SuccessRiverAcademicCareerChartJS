@@ -12,6 +12,7 @@ h1, h2, h3, h1 *, h2 *, h3 * {
 :root {
   --col-width: 50px;
   --row-width: 50px;
+  --future-cols: 2;
   --chart-header-position: 0px;
   --color-blue: #007dc5;
   --color-orange: #f7941e;
@@ -411,6 +412,8 @@ section.career-chart-container {
   display: block;
   margin: 30px 50px 20px;
   width: var(--row-width);
+  contain: paint;
+  overflow-clip-margin: 20px;
 }
 .year-background {
   position: absolute;
@@ -444,8 +447,9 @@ section.career-chart-container {
   top: 0;
   left: calc(var(--chart-header-position) - 10px);
   width: 300px;
-  height: calc(100% - 10px);
+  height: auto;
   font-size: 1em;
+  pointer-events: none;
 }
 .career-chart h3:before {
   content: '';
@@ -622,7 +626,7 @@ section.career-chart-container {
   border-width: 5px 0 0;
 }
 .year-cell.now {
-  width: calc(var(--col-width) * 2);
+  width: calc(var(--col-width) * var(--future-cols) - 4px);
   border: 1px solid #ccc;
   border-width: 5px 0 0;
 }

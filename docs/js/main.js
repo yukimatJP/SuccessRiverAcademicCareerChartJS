@@ -201,6 +201,7 @@ var app = new Vue({
       const root = document.documentElement;
       root.style.setProperty('--col-width', this.chart.settings.cellWidth + "px");
       root.style.setProperty('--row-width', "50px");
+      root.style.setProperty('--future-cols', 2);
       root.style.setProperty('--chart-header-position', "0px");
 
       const sc = document.querySelector(".career-chart");
@@ -526,6 +527,7 @@ var app = new Vue({
         this.chart.events.push(it);
         this.updateCareerPeriod(it.year, it.year);
       }
+      this.updateCellWidth();
       this.$nextTick(this.layoutCareerEvents);
     },
     replotCareerChart() {
@@ -615,8 +617,20 @@ var app = new Vue({
       this.saveDisplayOptions();
       // update cell width
       let root = document.documentElement;
+      let maxPosition = this.chart.latestYear + 3;
+      for(const rows of [this.chart.educationsAndJobs, this.chart.grants]) {
+        for(const row of rows) {
+          for(const item of row) maxPosition = Math.max(maxPosition, Number(item.to) || 0);
+        }
+      }
+      for(const item of this.chart.events) {
+        maxPosition = Math.max(maxPosition, (Number(item.pos) || 0) + 1);
+      }
+      const futureColumns = Math.max(2, Math.ceil(maxPosition - (this.chart.latestYear + 1)));
+      const yearColumns = Math.max(1, this.chart.latestYear - this.chart.firstYear + 1);
       root.style.setProperty('--col-width', cellWidth + "px");
-      root.style.setProperty('--row-width', cellWidth * (4 + this.chart.latestYear - this.chart.firstYear) + "px");
+      root.style.setProperty('--future-cols', futureColumns);
+      root.style.setProperty('--row-width', cellWidth * (yearColumns + futureColumns) + "px");
       this.scheduleCareerEventLayout();
     },
     normalizeCellWidth() {
@@ -626,7 +640,8 @@ var app = new Vue({
       this.updateCellWidth();
     },
     onScrollChart(e) {
-      document.documentElement.style.setProperty('--chart-header-position', e.target.scrollLeft + "px");
+      const chart = e.currentTarget || e.target;
+      document.documentElement.style.setProperty('--chart-header-position', chart.scrollLeft + "px");
     },
     getAchievementRowHeight(type) {
       let maxLength = 0;
@@ -680,9 +695,10 @@ var app = new Vue({
       const cs = getComputedStyle(document.documentElement);
       const col = (cs.getPropertyValue("--col-width") || "50px").trim() || "50px";
       const row = (cs.getPropertyValue("--row-width") || "50px").trim() || "50px";
+      const future = (cs.getPropertyValue("--future-cols") || "2").trim() || "2";
       const pos0 = (cs.getPropertyValue("--chart-header-position") || "").trim();
       const pos = pos0 || ((sc.scrollLeft || 0) + "px");
-      const vars = `:root{--col-width:${col};--row-width:${row};--chart-header-position:${pos};}`;
+      const vars = `:root{--col-width:${col};--row-width:${row};--future-cols:${future};--chart-header-position:${pos};}`;
 
       const tmpDoc = document.implementation.createHTMLDocument("tmp");
       const st = tmpDoc.createElement("style");
@@ -717,7 +733,7 @@ var app = new Vue({
       };
 
       const body = formatDom(wrap.outerHTML).trim() + "\n";
-      const script = `(()=>{const chart=document.querySelector(".career-chart");if(!chart)return;const sync=()=>document.documentElement.style.setProperty("--chart-header-position",chart.scrollLeft+"px");chart.addEventListener("scroll",sync,{passive:true});sync();})();`;
+      const script = `(()=>{const chart=document.querySelector(".career-chart");if(!chart)return;const sync=()=>document.documentElement.style.setProperty("--chart-header-position",chart.scrollLeft+"px");chart.addEventListener("scroll",sync,{passive:true});sync()})();`;
       const html = `<!doctype html><html lang="ja"><!--  Author: Yuki Matsuda @yukimatJP //--><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AcademicCareerChart Export</title><style>${css}${vars}${extra}</style></head><body>${body}<script>${script}<\/script></body></html>`;
 
       const blob = new Blob([html], { type: "text/html;charset=utf-8" });
