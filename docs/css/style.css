@@ -96,15 +96,24 @@ h1, h2, h3, h1 *, h2 *, h3 * {
   color: white;
   text-decoration: none;
 }
-.app > section {
+.app-layout {
+  display: grid;
+  grid-template-columns: minmax(430px, 520px) minmax(0, 1fr);
+  margin-top: 50px;
+}
+.app-controls,
+.career-chart-container {
+  min-width: 0;
+}
+.app-layout section {
   padding: 15px 30px 30px;
 }
-.app > section h2 {
+.app-layout section h2 {
   position: relative;
   font-size: 1.2em;
   margin: 0 0 10px;
 }
-.app > section h2:before {
+.app-layout section h2:before {
   content: "";
   position: absolute;
   left: -30px;
@@ -113,9 +122,14 @@ h1, h2, h3, h1 *, h2 *, h3 * {
   border: 1px solid #333;
   border-width: 0 0 0 18px;
 }
+@media (max-width: 1199px) {
+  .app-layout {
+    display: block;
+  }
+}
 section.file-select-container {
   display: block;
-  margin: 50px 0 0;
+  margin: 0;
   background: white;
   border: 1px dotted #ccc;
   border-width: 0 0 1px;
@@ -137,6 +151,11 @@ section.file-select-container label {
 }
 section.file-select-container label:hover {
   opacity: 0.7;
+}
+section.file-select-container .file-select-help {
+  margin: 2px 16px 4px;
+  color: #777;
+  font-size: 0.8em;
 }
 section.file-select-container p.selected-file-name {
   position: relative;
@@ -175,7 +194,7 @@ section.career-event-editor .career-event-form {
 }
 section.career-event-editor .career-event-row {
   display: grid;
-  grid-template-columns: 150px 1fr 70px;
+  grid-template-columns: 130px 1fr 70px;
   align-items: center;
   gap: 8px 10px;
   padding: 3px 10px;
@@ -184,8 +203,8 @@ section.career-event-editor .career-event-row {
   background: white;
 }
 section.career-event-editor .career-event-row input[type="month"] {
-  width: 150px;
-  min-width: 150px;
+  width: 130px;
+  min-width: 130px;
   height: 33px;
   padding: 3px 8px;
   font-size: 0.95em;
@@ -363,14 +382,17 @@ section.career-chart-container {
 .career-chart-empty {
   border: 1px solid #ddd;
   border-radius: 5px;
-  width: calc(100vw - 60px);
-  height: 200px;
-}
-.career-chart-empty label {
-  display: block;
-  line-height: 200px;
   width: 100%;
   height: 100%;
+  min-height: 200px;
+}
+.career-chart-empty label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
   text-align: center;
   color: gray;
   cursor: pointer;
@@ -381,7 +403,7 @@ section.career-chart-container {
 .career-chart {
   border: 1px solid #ddd;
   border-radius: 5px;
-  width: calc(100vw - 60px);
+  width: 100%;
   overflow-x: auto;
 }
 .career-chart-wrap {
@@ -623,30 +645,31 @@ section.career-chart-container {
 .export-chart ul li:hover {
   opacity: 0.7;
 }
-.copy-chart-url {
-  background: #333;
-}
-.share-chart-to-X {
-  background: #333;
-}
-.embed-chart {
-  background: var(--color-blue);
-}
 .print-chart {
   background: var(--color-green);
 }
 .export-html {
   background: var(--color-red);
 }
-.export-chart textarea {
+.exit-print-mode {
+  position: fixed;
+  z-index: 100;
+  top: 12px;
+  right: 16px;
+  padding: 7px 12px;
+  color: white;
+  background: rgba(51, 51, 51, 0.85);
   border: 0;
-  height: 40px;
-  width: 100%;
-  padding: 10px;
-  line-height: 20px;
-  background: #eee;
   border-radius: 5px;
-  white-space: nowrap;
+  cursor: pointer;
+}
+.exit-print-mode:hover {
+  background: #333;
+}
+@media print {
+  .exit-print-mode {
+    display: none !important;
+  }
 }
 footer {
   position: relative;
@@ -748,11 +771,17 @@ footer .credit {
 .app.print .career-chart-container {
   padding: 0px;
 }
+.app.embed .app-layout,
+.app.print .app-layout {
+  display: block;
+  margin-top: 0;
+}
 .app.embed .career-chart,
 .app.print .career-chart {
   width: 100vw;
   border: none;
+  border-radius: 0;
 }
 .app.print .career-chart-wrap {
-  min-height: calc(100vh - 50px);
+  min-height: 100vh;
 }

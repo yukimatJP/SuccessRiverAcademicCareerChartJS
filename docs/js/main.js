@@ -74,7 +74,6 @@ var app = new Vue({
     },
     achievementTypeList: ['journal', 'intlConf', 'domesticConf'],
     achievementNameList: {'journal': '論文誌・ジャーナル', 'intlConf': '国際会議プロシーディングス', 'domesticConf': '国内研究会・シンポジウム'},
-    exportedChartURL: '',
     importData: '',
     careerEventLayoutFrame: null,
   },
@@ -169,7 +168,6 @@ var app = new Vue({
       this.rmFile = null;
       this.rmJson = null;
 
-      this.exportedChartURL = '';
       this.importData = '';
 
       this.researcher = {
@@ -646,119 +644,21 @@ var app = new Vue({
         left:  (this.chart.settings.cellWidth * (item.from - this.chart.firstYear)) + 'px'
       };
     },
-    exportChart() {
-      let eaj = [];
-      for(let i=0; i<this.chart.educationsAndJobs.length; i++) {
-        let tmp = [];
-        for(let j=0; j<this.chart.educationsAndJobs[i].length; j++) {
-          let data = this.chart.educationsAndJobs[i][j];
-          tmp.push([
-            parseFloat((data.from-2000.0).toFixed(2)),
-            parseFloat((data.to-2000.0).toFixed(2)),
-            "__" + data.name + "__",
-            Number(data.isEdu)
-          ]);
-        }
-        eaj.push(tmp);
-      }
-      let grants = [];
-      let grantKakenhiFlags = [];
-      for(let i=0; i<this.chart.grants.length; i++) {
-        let tmp = [];
-        for(let j=0; j<this.chart.grants[i].length; j++) {
-          let data = this.chart.grants[i][j];
-          tmp.push([
-            parseFloat((data.from-2000.0).toFixed(2)),
-            parseFloat((data.to-2000.0).toFixed(2)),
-            "__" + data.name + "__",
-            Number(data.isPI)
-          ]);
-          grantKakenhiFlags.push(Number(data.isKakenhi));
-        }
-        grants.push(tmp);
-      }
-      let achvmnt = [];
-      for(let type of this.achievementTypeList) {
-        let tmp = [];
-        for(let i=this.chart.firstYear; i<=this.chart.latestYear; i++) {
-          let val = this.chart.achievements[type][String(i)];
-          let principal = val.filter(e => e == 1).length;
-          let coauthor  = val.filter(e => e == 0).length;
-          tmp.push(principal+'-'+coauthor);
-        }
-        tmp = tmp.join('_').replaceAll('0-0', '').replaceAll('0', '');
-        achvmnt.push(tmp);
-      }
-      let events = [];
-      for (let i=0; i<(this.career.events || []).length; i++) {
-        const e = this.career.events[i] || {};
-        const date = (typeof e.date === "string") ? e.date.trim() : "";
-        const content = (typeof e.content === "string") ? e.content.trim() : "";
-        if(!date && !content) continue;
-
-        const dt = date.split("-");
-        const y = (dt.length > 0 && dt[0]) ? parseInt(dt[0]) : this.chart.firstYear;
-        const m = (dt.length > 1 && dt[1]) ? parseInt(dt[1]) : 1;
-        if(!isFinite(y) || !isFinite(m)) continue;
-
-        const pos = parseFloat(((y + (m / 12.0)) - 2000.0).toFixed(2));
-        events.push(pos);
-        events.push("__" + content + "__");
-      }
-      let expJson = [
-        // researcher info
-        encodeURI(this.researcher.name.display),
-        encodeURI(this.researcher.affiliation.display),
-        // year
-        this.chart.firstYear-2000,
-        this.chart.latestYear-2000,
-        // setting
-        this.chart.settings.cellWidth,
-        Number(this.chart.settings.visibility.journal),
-        Number(this.chart.settings.visibility.intlConf),
-        Number(this.chart.settings.visibility.domesticConf),
-        Number(this.chart.settings.visibility.notPIgrants),
-        Number(this.chart.settings.visibility.notFirstCorrespAchievement),
-        // chart
-        encodeURI(eaj),
-        encodeURI(grants),
-        encodeURI(achvmnt),
-        encodeURI(events),
-        Number(this.chart.settings.visibility.notReviewedAchievement),
-        Number(this.chart.settings.visibility.notKakenhiGrants),
-        encodeURI(grantKakenhiFlags),
-      ];
-      this.exportedChartURL = 'https://career-chart.yukimat.jp/?chart=' + expJson.map(encodeURIComponent).join('...');
-      setTimeout(() => {
-        $('exported-chart-url').select();
-        document.execCommand('copy');
-      }, 100);
-    },
-    shareChartToX() {
-      this.exportChart();
-      let url = encodeURI('https://x.com/intent/tweet?text=サクセスリバー式キャリアチャートを作ってみたよ！\n→ ' + this.exportedChartURL + '\n\n@yukimatJP&hashtags=SuccessRiverAcademicCareerChartJS,サクセスリバー式キャリアチャート');
-      window.open(url, "_blank");
-    },
-    embedChart() {
-      this.exportChart();
-      let ww = $("career-chart-wrap").offsetWidth + 130;
-      let wh = $("career-chart-wrap").offsetHeight + 60;
-      this.exportedChartURL = '<iframe src="' + this.exportedChartURL.replace('?chart=', '?embed&chart=') + '" width=' + ww + ' height=' + wh + '>';
-      setTimeout(() => {
-        $('exported-chart-url').select();
-        document.execCommand('copy');
-      }, 100);
-    },
     printChart() {
-      this.exportChart();
-      this.exportedChartURL = this.exportedChartURL.replace('?chart=', '?print&chart=');
-      window.open(this.exportedChartURL, "_blank");
+      this.isPrintingMode = true;
+      this.$nextTick(() => {
+        window.scrollTo(0, 0);
+        const chart = document.querySelector(".career-chart");
+        if(chart) chart.scrollLeft = 0;
+        document.documentElement.style.setProperty('--chart-header-position', '0px');
+        this.scheduleCareerEventLayout();
+      });
     },
-    buildPrintOpenUrl() {
-      this.exportChart();
-      return this.exportedChartURL.replace('?chart=', '?print&chart=');
+    exitPrintMode() {
+      this.isPrintingMode = false;
+      this.$nextTick(this.scheduleCareerEventLayout);
     },
-    exportHTML() {
+    async exportHTML() {
       const src = document.querySelector(".career-chart-container");
       const sc = document.querySelector(".career-chart");
       if (!src || !sc) return alert("チャートが表示されていないため、HTMLを書き出せません。");
@@ -786,7 +686,21 @@ var app = new Vue({
 
       const tmpDoc = document.implementation.createHTMLDocument("tmp");
       const st = tmpDoc.createElement("style");
-      st.textContent = Array.from(document.querySelectorAll("style")).map(s => s.textContent || "").join("\n");
+      let sourceCss = Array.from(document.styleSheets).map(sheet => {
+        try {
+          return Array.from(sheet.cssRules || []).map(rule => rule.cssText).join("\n");
+        } catch(e) {
+          return "";
+        }
+      }).filter(Boolean).join("\n");
+      if(!sourceCss) {
+        try {
+          const response = await fetch("css/style.css");
+          if(response.ok) sourceCss = await response.text();
+        } catch(e) {}
+      }
+      if(!sourceCss) return alert("CSSを読み込めないため、HTMLを書き出せません。");
+      st.textContent = sourceCss;
       tmpDoc.head.appendChild(st);
 
       const tmpRoot = tmpDoc.createElement("div");
@@ -803,7 +717,8 @@ var app = new Vue({
       };
 
       const body = formatDom(wrap.outerHTML).trim() + "\n";
-      const html = `<!doctype html><html lang="ja"><!--  Author: Yuki Matsuda @yukimatJP //--><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AcademicCareerChart Export</title><style>${css}${vars}${extra}</style></head><body>${body}</body></html>`;
+      const script = `(()=>{const chart=document.querySelector(".career-chart");if(!chart)return;const sync=()=>document.documentElement.style.setProperty("--chart-header-position",chart.scrollLeft+"px");chart.addEventListener("scroll",sync,{passive:true});sync();})();`;
+      const html = `<!doctype html><html lang="ja"><!--  Author: Yuki Matsuda @yukimatJP //--><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AcademicCareerChart Export</title><style>${css}${vars}${extra}</style></head><body>${body}<script>${script}<\/script></body></html>`;
 
       const blob = new Blob([html], { type: "text/html;charset=utf-8" });
       const url = URL.createObjectURL(blob);
@@ -923,7 +838,7 @@ var app = new Vue({
     }
   },
   computed: {
-    systemVersion: function() { return 'v1.6.2'; }
+    systemVersion: function() { return 'v1.7'; }
   }
 });
 

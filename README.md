@@ -20,6 +20,8 @@ Githubリポジトリ： <a href="https://github.com/yukimatJP/SuccessRiverAcade
 
 ## Release Note
 
+- 2026/08/31 (v1.7)
+  UIを整理しました。プレビューが右側に出るようになったほか、表示・非表示オプションを増やしました。
 - 2026/01/01 (v1.6.2)  
   UIを整理しました。Note Sans と Google Material Symbols を使うようにしました。ライセンスを表示するようにしました。
 - 2025/12/31 (v1.6.1)  
