@@ -10,8 +10,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=arrow_back,close,code,file_open,format_list_bulleted_add,print" rel="stylesheet" />
-<link rel="stylesheet" href="css/style.css?v=1.7.2">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=arrow_back,list_arrow,close,code,download,edit_calendar,file_open,format_list_bulleted_add,print,tips_and_updates,tune,upload_file" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css?v=1.7.3">
 <div class="app" id="app" :class="{embed: isEmbeddingMode, print:isPrintingMode}">
 <header class="clearfix">
   <h1>SuccessRiver AcademicCareerChart (${ systemVersion })</h1>
@@ -28,7 +28,7 @@
 <main class="app-layout">
 <div class="app-controls">
 <section class="file-select-container">
-  <h2>① researchmapファイルを選択</h2>
+  <h2 class="ic ic-24 ic-step-file">researchmapファイルを選択</h2>
   <div class="file-select-buttons">
     <div v-if="isSharingMode">
       <p class="selected-file-name" @click="resetPage">
@@ -46,11 +46,12 @@
         ${ rmFile.name }
         <span class="ic ic-20 ic-file">ファイルを変更する</span>
       </p>
+      <p class="file-select-help">JSONLファイルを変更する場合はこちらをクリックしてください。</p>
     </div>
   </div>
 </section>
 <section class="career-event-editor">
-  <h2>② キャリアイベントを登録</h2>
+  <h2 class="ic ic-24 ic-step-event">キャリアイベントを登録</h2>
   <div class="career-event-form">
     <div class="career-event-row" v-for="(event, idx) in career.events" :key="idx">
       <input type="month" v-model="event.date" @blur="saveCareerEvents">
@@ -59,11 +60,14 @@
               class="career-event-remove ic ic-16 ic-remove"
               @click="removeCareerEventRow(idx)">削除</button>
     </div>
-    <button type="button" class="career-event-add ic ic-20 ic-add-event" @click="addCareerEventRow">追加する</button>
+    <div class="career-event-actions">
+      <button type="button" class="career-event-sort ic ic-20 ic-sort" @click="sortCareerEvents(true)">並べ替え</button>
+      <button type="button" class="career-event-add ic ic-16 ic-add-event" @click="addCareerEventRow">追加</button>
+    </div>
   </div>
 </section>
 <section class="chart-setting-container">
-  <h2>③ 表示オプション</h2>
+  <h2 class="ic ic-24 ic-step-settings">表示オプション</h2>
   <dl class="clearfix">
     <div class="chart-setting-group">
       <dt>表示横幅</dt>
@@ -139,8 +143,21 @@
     </div>
   </dl>
 </section>
+<section class="output-container">
+  <h2 class="ic ic-24 ic-step-output">出力</h2>
+  <nav class="export-chart" aria-label="チャートの出力">
+    <button type="button"
+            class="export-html"
+            :disabled="!rmJson"
+            @click="exportHTML">HTMLファイルをエクスポート</button>
+    <button type="button"
+            class="print-chart"
+            :disabled="!rmJson"
+            @click="printChart">印刷モードで表示</button>
+  </nav>
+</section>
 <section class="data-quality-container" v-if="rmJson">
-  <h2>登録情報の改善提案</h2>
+  <h2 class="ic ic-24 ic-data-quality">登録情報の改善提案</h2>
   <p class="data-quality-success" v-if="!dataQualitySuggestions.length">確認対象の登録情報に問題は見つかりませんでした。</p>
   <p class="data-quality-description" v-if="dataQualitySuggestions.length">次の情報をresearchmapに追加すると、キャリアチャートをより正確に描画できます。</p>
   <details class="data-quality-item" v-for="suggestion in dataQualitySuggestions" :key="suggestion.key">
@@ -237,12 +254,6 @@
       </div>
     </div>
   </div>
-  <nav class="export-chart" v-if="chart.latestYear">
-    <ul>
-      <li class="print-chart" @click="printChart">印刷モードで表示</li>
-      <li class="export-html" @click="exportHTML">HTMLファイルをエクスポート</li>
-    </ul>
-  </nav>
 </section>
 </main>
 <footer class="clearfix">
@@ -250,11 +261,12 @@
     <div class="content">
       <h2>◆ このページについて</h2>
       <p>
-        「SuccessRiver AcademicCareerChart (${ systemVersion })」は、<a href="https://x.com/rei_nari">@rei_nari</a>さん考案のキャリアイベント図をresearchmapに登録された情報から生成します。
-        researchmap の「研究者・業績エクスポート」機能を使用して出力したファイル（.jsonl）を読み込むだけで、キャリアイベント図を作成することができます。
+        「SuccessRiver AcademicCareerChart (${ systemVersion })」は、<a href="https://x.com/rei_nari">@rei_nari</a>氏が考案したキャリアイベント図を、researchmapに登録された情報から生成するWebアプリケーションです。
+        researchmapの「研究者・業績エクスポート」機能から出力したJSONL形式（.jsonl）のファイルを読み込むだけで、キャリアイベント図を作成できます。
       </p>
       <p>
-        このシステムは、各種設定の一時保存のため LocalStorage を使用します。
+        読み込んだファイルはブラウザ内で処理され、サーバーには送信されません。
+        入力したキャリアイベントと表示設定の保存には、ブラウザのLocalStorageを使用します。
       </p>
       <h2>◆ 開発に関する情報</h2>
       <dl>
@@ -287,6 +299,8 @@
       <button type="button" class="ic ic-20 ic-remove" aria-label="閉じる" @click="closeReleaseNotes">閉じる</button>
     </div>
     <dl>
+      <dt>2026/09/01 (v1.7.3)</dt>
+      <dd>UIを改善・調整しました。キャリアイベントをソートできるようになりました。</dd>
       <dt>2026/08/31 (v1.7.2)</dt>
       <dd>出力データのライセンスについて明記しました。</dd>
       <dt>2026/08/31 (v1.7.1)</dt>
@@ -327,5 +341,5 @@
 </footer>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js"></script>
-<script src="js/main.js?v=1.7.2"></script>
+<script src="js/main.js?v=1.7.3"></script>
 </html>

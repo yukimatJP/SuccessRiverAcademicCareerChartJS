@@ -64,6 +64,12 @@ h1, h2, h3, h1 *, h2 *, h3 * {
 .ic.ic-remove:before    { content: "close"; top: 3px; margin-left: -2px; }
 .ic.ic-back:before      { content: "arrow_back"; }
 .ic.ic-print:before     { content: "print"; }
+.ic.ic-step-file:before     { content: "upload_file"; }
+.ic.ic-step-event:before    { content: "edit_calendar"; }
+.ic.ic-step-settings:before { content: "tune"; }
+.ic.ic-step-output:before   { content: "download"; }
+.ic.ic-data-quality:before  { content: "tips_and_updates"; }
+.ic.ic-sort:before          { content: "list_arrow"; }
 
 .app {
   overflow-x: hidden;
@@ -112,21 +118,36 @@ h1, h2, h3, h1 *, h2 *, h3 * {
   min-width: 0;
 }
 .app-layout section {
-  padding: 15px 30px 30px;
+  padding: 20px;
 }
-.app-layout section h2 {
+.app-controls section {
   position: relative;
-  font-size: 1.2em;
-  margin: 0 0 10px;
+  padding-right: 15px;
 }
-.app-layout section h2:before {
+.app-controls > section:not(:last-child)::after {
   content: "";
   position: absolute;
-  left: -30px;
-  top: 0;
+  right: 10px;
   bottom: 0;
-  border: 1px solid #333;
-  border-width: 0 0 0 18px;
+  left: 20px;
+  border-top: 1px dotted #ccc;
+}
+.app-controls > section:last-child {
+  padding-bottom: 50px;
+}
+.app-layout section h2 {
+  font-size: 1.2em;
+  line-height: 1.4;
+  margin: 0 0 14px;
+}
+.app-controls section h2.ic::before {
+  color: inherit;
+  font-weight: 400;
+}
+@media (min-width: 1200px) {
+  .app-layout .career-chart-container {
+    padding-left: 10px;
+  }
 }
 @media (max-width: 1199px) {
   .app-layout {
@@ -137,8 +158,6 @@ section.file-select-container {
   display: block;
   margin: 0;
   background: white;
-  border: 1px dotted #ccc;
-  border-width: 0 0 1px;
 }
 section.file-select-container .file-select-buttons {
   padding: 5px 0 0;
@@ -187,8 +206,6 @@ section.file-select-container p.selected-file-name span {
 }
 section.career-event-editor {
   background: white;
-  border: 1px dotted #ccc;
-  border-width: 0 0 1px;
 }
 section.career-event-editor h2 {
   margin-bottom: 10px;
@@ -226,8 +243,10 @@ section.career-event-editor .career-event-row input[type="text"] {
   line-height: 1.2;
   border: none;
 }
-section.career-event-editor .career-event-remove {
+section.career-event-editor .career-event-remove,
+section.career-event-editor .career-event-add {
   justify-self: end;
+  width: 64px;
   padding: 5px 10px;
   font-size: 0.8em;
   color: white;
@@ -237,46 +256,65 @@ section.career-event-editor .career-event-remove {
   cursor: pointer;
   white-space: nowrap;
 }
-section.career-event-editor .career-event-remove:hover {
-  opacity: 0.7;
-}
-section.career-event-editor .career-event-add {
-  align-self: flex-start;
-  margin: 16px 16px 4px;
-  padding: 7px 14px;
-  background: var(--color-blue);
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
+section.career-event-editor .career-event-remove:hover,
 section.career-event-editor .career-event-add:hover {
   opacity: 0.7;
+}
+.career-event-actions {
+  display: grid;
+  grid-template-columns: 130px 1fr 70px;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 3px 10px;
+}
+section.career-event-editor .career-event-sort {
+  width: 100%;
+  height: 30px;
+  padding: 2px 8px;
+  color: #555;
+  background: transparent;
+  border: none;
+  font-size: 0.8em;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+}
+section.career-event-editor .career-event-sort:before {
+  top: 5px;
+}
+section.career-event-editor .career-event-add {
+  grid-column: 3;
+  background: var(--color-blue);
+}
+section.career-event-editor .career-event-sort {
+  grid-column: 1;
+}
+section.career-event-editor .career-event-sort:hover {
+  color: var(--color-blue);
 }
 section.career-event-editor input:focus {
   outline: none;
   border-color: #6b82ff;
   box-shadow: 0 0 0 2px rgba(107,130,255,0.2);
 }
-section.chart-setting-container {
-  border: 1px dotted #ccc;
-  border-width: 0 0 1px;
+.app-layout section.output-container {
+  padding-bottom: 35px;
 }
-.data-quality-container {
-  border-bottom: 1px dotted #ccc;
+.output-container .export-chart {
+  margin-inline: 10px;
 }
 .data-quality-description {
-  margin: 0 0 12px;
+  margin: 0 10px 12px;
   color: #666;
   font-size: 0.85em;
 }
 .data-quality-success {
-  margin: 0;
+  margin: 0 10px;
   color: var(--color-green);
   font-size: 0.9em;
 }
 .data-quality-item {
-  margin-top: 7px;
+  margin: 7px 10px 0;
   border-bottom: 1px solid #ddd;
 }
 .data-quality-item summary {
@@ -433,7 +471,7 @@ section.career-chart-container {
   position: absolute;
   z-index: 30;
   top: 77px;
-  right: 42px;
+  right: 32px;
   padding: 3px 7px;
   color: #777;
   background: rgba(255, 255, 255, 0.9);
@@ -694,21 +732,27 @@ section.career-chart-container {
 .year-cell.now span {
   visibility: hidden;
 }
-.export-chart ul {
-  padding: 0;
-  margin: 10px 0;
+.export-chart {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
-.export-chart ul li {
-  display: inline-block;
+.export-chart button {
   color: white;
-  margin: 10px 5px 5px 0;
-  padding: 5px 10px;
+  padding: 7px 12px;
+  border: 0;
   border-radius: 5px;
   font-size: 0.9em;
   cursor: pointer;
 }
-.export-chart ul li:hover {
+.export-chart button:hover:not(:disabled) {
   opacity: 0.7;
+}
+.export-chart button:disabled {
+  color: #888;
+  background: #ddd;
+  cursor: not-allowed;
+  opacity: 1;
 }
 .print-chart {
   background: var(--color-green);
@@ -903,6 +947,7 @@ footer .credit {
 .app.embed .file-select-container,
 .app.embed .career-event-editor,
 .app.embed .chart-setting-container,
+.app.embed .output-container,
 .app.embed .data-quality-container,
 .app.embed .career-chart-container h2,
 .app.embed .export-chart,
@@ -911,6 +956,7 @@ footer .credit {
 .app.print .file-select-container,
 .app.print .career-event-editor,
 .app.print .chart-setting-container,
+.app.print .output-container,
 .app.print .data-quality-container,
 .app.print .career-chart-container h2,
 .app.print .export-chart {

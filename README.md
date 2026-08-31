@@ -11,6 +11,13 @@ Githubリポジトリ： <a href="https://github.com/yukimatJP/SuccessRiverAcade
 
 ライセンス：
 - CC-BY-NC 4.0 <a href="https://creativecommons.org/licenses/by-nc/4.0/">https://creativecommons.org/licenses/by-nc/4.0/</a>
+  
+出力データの利用について：
+- 本システムで生成されたキャリアイベント図を利用する際に、制作者への連絡やクレジットの表記は不要です。  
+  なお、クレジットを表記いただける場合には、
+  ```このキャリアイベント図は、<a href="https://career-chart.yukimat.jp/">SuccessRiver AcademicCareerChart (${ systemVersion }) by @yukimatJP</a> を用いて作成されました。```
+  といった形で紹介ください。  
+  また、SNSなどでこのシステムを紹介いただくのも大歓迎します。
 
 <img width="1539" alt="SuccessRiverAcademicCareerChart" src="https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS/assets/3212917/09d336cb-0779-4006-9f15-033e0d36d399">
 
@@ -20,6 +27,8 @@ Githubリポジトリ： <a href="https://github.com/yukimatJP/SuccessRiverAcade
 
 ## Release Note
 
+- 2026/09/01 (v1.7.3)
+  UIを改善・調整しました。キャリアイベントをソートできるようになりました。
 - 2026/08/31 (v1.7.2)
   出力データのライセンスについて明記しました。
 - 2026/08/31 (v1.7.1)

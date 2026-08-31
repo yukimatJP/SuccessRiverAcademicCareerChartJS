@@ -430,12 +430,14 @@ var app = new Vue({
       }
       this.saveCareerEvents();
     },
-    sortCareerEvents: function () {
+    sortCareerEvents: function (saveChanges = false) {
       this.career.events.sort((a, b) => {
+        if (!a.date && !b.date) return 0;
         if (!a.date) return 1;
         if (!b.date) return -1;
         return a.date.localeCompare(b.date);
       });
+      if (saveChanges) this.saveCareerEvents();
     },
     saveCareerEvents: function() {
       try {
@@ -923,7 +925,7 @@ var app = new Vue({
         }
       ].filter(suggestion => suggestion.items.length > 0);
     },
-    systemVersion: function() { return 'v1.7.2'; }
+    systemVersion: function() { return 'v1.7.3'; }
   }
 });
 
