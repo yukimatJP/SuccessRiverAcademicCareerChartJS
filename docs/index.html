@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=code,file_open,format_list_bulleted_add,close" rel="stylesheet" />
-<link rel="stylesheet" href="css/style.css?v=1.7">
+<link rel="stylesheet" href="css/style.css?v=1.7.1">
 <div class="app" id="app" :class="{embed: isEmbeddingMode, print:isPrintingMode}">
 <header class="clearfix">
   <h1>SuccessRiver AcademicCareerChart (${ systemVersion })</h1>
@@ -135,6 +135,21 @@
     </div>
   </dl>
 </section>
+<section class="data-quality-container" v-if="rmJson">
+  <h2>登録情報の改善提案</h2>
+  <p class="data-quality-success" v-if="!dataQualitySuggestions.length">確認対象の登録情報に問題は見つかりませんでした。</p>
+  <p class="data-quality-description" v-if="dataQualitySuggestions.length">次の情報をresearchmapに追加すると、キャリアチャートをより正確に描画できます。</p>
+  <details class="data-quality-item" v-for="suggestion in dataQualitySuggestions" :key="suggestion.key">
+    <summary>${ suggestion.label }（${ suggestion.items.length }件）</summary>
+    <ul>
+      <li v-for="item in suggestion.items">
+        <a v-if="item.url" :href="item.url" target="_blank" rel="noopener noreferrer">${ item.title }</a>
+        <span v-else>${ item.title }</span>
+        <time v-if="item.date">${ item.date }</time>
+      </li>
+    </ul>
+  </details>
+</section>
  </div>
 <section class="career-chart-container">
   <div class="career-chart-empty" v-if="!chart.latestYear"><label for="researchmap-file-input"><span class="ic ic-20 ic-file">ファイルを選択してください</span></label></div>
@@ -256,6 +271,8 @@
   <div class="release-note">
     <h2>◇ リリースノート</h2>
     <dl>
+      <dt>2026/08/31 (v1.7.1)</dt>
+      <dd>researchmapのエクスポートファイルを検査し、改善点があれば指摘する機能を追加しました。</dd>
       <dt>2026/08/31 (v1.7)</dt>
       <dd>UIを整理しました。プレビューが右側に出るようになったほか、表示・非表示オプションを増やしました。</dd>
       <dt>2026/01/01 (v1.6.2)</dt>
@@ -292,5 +309,5 @@
 </footer>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js"></script>
-<script src="js/main.js?v=1.7"></script>
+<script src="js/main.js?v=1.7.1"></script>
 </html>

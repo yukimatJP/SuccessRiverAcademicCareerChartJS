@@ -20,6 +20,8 @@ Githubリポジトリ： <a href="https://github.com/yukimatJP/SuccessRiverAcade
 
 ## Release Note
 
+- 2026/08/31 (v1.7.1)
+  researchmapのエクスポートファイルを検査し、改善点があれば指摘する機能を追加しました。
 - 2026/08/31 (v1.7)
   UIを整理しました。プレビューが右側に出るようになったほか、表示・非表示オプションを増やしました。
 - 2026/01/01 (v1.6.2)  

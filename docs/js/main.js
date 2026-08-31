@@ -9,7 +9,10 @@ const JSONL = {
     for(let i=0; i<jsonlArray.length; i++) {
       let jsonlRow = JSON.parse(jsonlArray[i]);
       if(!(jsonlRow.insert.type in jsonlObj)) jsonlObj[jsonlRow.insert.type] = [];
-      jsonlObj[jsonlRow.insert.type].push(jsonlRow.merge);
+      const merge = jsonlRow.merge || {};
+      merge._rmId = jsonlRow.insert.id || "";
+      merge._rmUserId = jsonlRow.insert.user_id || "";
+      jsonlObj[jsonlRow.insert.type].push(merge);
     }
     return jsonlObj;
   }
@@ -25,6 +28,7 @@ var app = new Vue({
     rmFile: null,
     rmJson: null,
     researcher: {
+      permalink: '',
       name: {
         ja: [],
         en: [],
@@ -171,6 +175,7 @@ var app = new Vue({
       this.importData = '';
 
       this.researcher = {
+        permalink: '',
         name: { ja: [], en: [], display: '' },
         affiliation: { display: '' }
       };
@@ -211,6 +216,7 @@ var app = new Vue({
       // Basic Info
       if('researchers' in this.rmJson) {
         let researcher = this.rmJson.researchers[0];
+        this.researcher.permalink = researcher.permalink || '';
         this.researcher.name.ja = [
           researcher.family_name.ja + " " + researcher.given_name.ja,
           researcher.family_name.ja +       researcher.given_name.ja,
@@ -854,7 +860,34 @@ var app = new Vue({
     }
   },
   computed: {
-    systemVersion: function() { return 'v1.7'; }
+    dataQualitySuggestions: function() {
+      if(!this.rmJson || !Array.isArray(this.rmJson.published_papers)) return [];
+      const makeItem = paper => {
+        const title = (paper.paper_title && (paper.paper_title.ja || paper.paper_title.en)) || 'タイトル未登録';
+        const id = paper._rmId || '';
+        const permalink = this.researcher.permalink || '';
+        return {
+          title: title,
+          date: paper.publication_date || '',
+          url: (permalink && id)
+            ? `https://researchmap.jp/${encodeURIComponent(permalink)}/published_papers/${encodeURIComponent(id)}` : ''
+        };
+      };
+      const papers = this.rmJson.published_papers;
+      return [
+        {
+          key: 'paper-type',
+          label: '掲載種別が登録されていない文献',
+          items: papers.filter(paper => !paper.published_paper_type).map(makeItem)
+        },
+        {
+          key: 'referee',
+          label: '査読有り無し情報が登録されていない文献',
+          items: papers.filter(paper => typeof paper.referee !== 'boolean').map(makeItem)
+        }
+      ].filter(suggestion => suggestion.items.length > 0);
+    },
+    systemVersion: function() { return 'v1.7.1'; }
   }
 });
 

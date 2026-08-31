@@ -257,6 +257,49 @@ section.chart-setting-container {
   border: 1px dotted #ccc;
   border-width: 0 0 1px;
 }
+.data-quality-container {
+  border-bottom: 1px dotted #ccc;
+}
+.data-quality-description {
+  margin: 0 0 12px;
+  color: #666;
+  font-size: 0.85em;
+}
+.data-quality-success {
+  margin: 0;
+  color: var(--color-green);
+  font-size: 0.9em;
+}
+.data-quality-item {
+  margin-top: 7px;
+  border-bottom: 1px solid #ddd;
+}
+.data-quality-item summary {
+  padding: 8px 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+  font-weight: 600;
+}
+.data-quality-item summary:hover {
+  color: var(--color-blue);
+}
+.data-quality-item ul {
+  margin: 0;
+  padding: 2px 8px 10px 28px;
+}
+.data-quality-item li {
+  margin: 5px 0;
+  font-size: 0.82em;
+}
+.data-quality-item a {
+  color: var(--color-blue);
+}
+.data-quality-item time {
+  margin-left: 8px;
+  color: #888;
+  font-size: 0.9em;
+  white-space: nowrap;
+}
 section.chart-setting-container input[type="range"],
 section.chart-setting-container input[type="checkbox"]  {
   accent-color: var(--color-blue);
@@ -760,6 +803,7 @@ footer .credit {
 .app.embed .file-select-container,
 .app.embed .career-event-editor,
 .app.embed .chart-setting-container,
+.app.embed .data-quality-container,
 .app.embed .career-chart-container h2,
 .app.embed .export-chart,
 .app.print header,
@@ -767,6 +811,7 @@ footer .credit {
 .app.print .file-select-container,
 .app.print .career-event-editor,
 .app.print .chart-setting-container,
+.app.print .data-quality-container,
 .app.print .career-chart-container h2,
 .app.print .export-chart {
   display: none;
