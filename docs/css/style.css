@@ -19,6 +19,10 @@ h1, h2, h3, h1 *, h2 *, h3 * {
   --color-red: #c41425;
   --color-green: #479b96;
   --color-purple: #762283;
+  --color-award-international: #e27616;
+  --color-award-domestic: #f2aa35;
+  --color-award-private: #a2a2a2;
+  --color-award-other: #ccc;
 }
 .clearfix::after {
    content: "";
@@ -433,19 +437,19 @@ section.chart-setting-container dl dd.achievement-scope-option {
 .toggle-switch-track {
   position: relative;
   flex: 0 0 auto;
-  width: 42px;
-  height: 23px;
+  width: 38px;
+  height: 18px;
   background: #aaa;
-  border-radius: 12px;
+  border-radius: 9px;
   transition: background 0.15s ease;
 }
 .toggle-switch-track::after {
   content: "";
   position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 17px;
-  height: 17px;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
   background: white;
   border-radius: 50%;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
@@ -455,7 +459,7 @@ section.chart-setting-container dl dd.achievement-scope-option {
   background: var(--color-blue);
 }
 .toggle-switch input:checked + .toggle-switch-track::after {
-  transform: translateX(19px);
+  transform: translateX(20px);
 }
 .toggle-switch input:focus-visible + .toggle-switch-track {
   outline: 2px solid var(--color-blue);
@@ -531,11 +535,16 @@ section.career-chart-container {
   background: #f9f9f9;
 }
 .researcher-info,
-.achievement-chart,
-.grant-chart,
-.edujob-chart,
 .year-chart {
   padding: 10px 0;
+  position: relative;
+  z-index: 10;
+}
+.achievement-chart,
+.award-chart,
+.grant-chart,
+.edujob-chart {
+  padding: 7px 0;
   position: relative;
   z-index: 10;
 }
@@ -562,16 +571,53 @@ section.career-chart-container {
 }
 .achievement-chart h3        { color:        var(--color-purple); opacity: 0.9; }
 .achievement-chart h3:before { border-color: var(--color-purple); opacity: 0.6; }
+.award-chart h3              { color:        var(--color-award-international); opacity: 1; }
+.award-chart h3:before       { border-color: var(--color-award-international); opacity: 0.7; }
 .grant-chart h3              { color:        var(--color-green); opacity: 1; }
 .grant-chart h3:before       { border-color: var(--color-green); opacity: 0.7; }
 .edujob-chart h3             { color:        var(--color-blue); opacity: 1; }
 .edujob-chart h3:before      { border-color: var(--color-blue); opacity: 0.7; }
 
 .career-chart h3 span {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   background: white;
   padding: 3px 10px;
+  white-space: nowrap;
 }
+.chart-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #666;
+  font-size: 0.62em;
+  font-weight: 400;
+}
+.chart-legend i {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-style: normal;
+  font-weight: 400;
+}
+.chart-legend i::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 5px;
+  background: #999;
+}
+.chart-legend .legend-achievement-primary::before { background: rgba(118, 34, 131, 0.8); }
+.chart-legend .legend-achievement-other::before   { background: rgba(118, 34, 131, 0.4); }
+.chart-legend .legend-award-international::before { background: var(--color-award-international); }
+.chart-legend .legend-award-domestic::before      { background: var(--color-award-domestic); }
+.chart-legend .legend-award-private::before       { background: var(--color-award-private); }
+.chart-legend .legend-award-other::before         { background: var(--color-award-other); }
+.chart-legend .legend-grant-primary::before       { background: rgba(71, 155, 150, 1); }
+.chart-legend .legend-grant-other::before         { background: rgba(71, 155, 150, 0.5); }
+.chart-legend .legend-job::before                 { background: rgba(0, 125, 197, 1); }
+.chart-legend .legend-education::before           { background: rgba(0, 125, 197, 0.5); }
 .researcher-info {
   margin: 0;
   height: 75px;
@@ -580,19 +626,28 @@ section.career-chart-container {
   width: 100%;
   font-size: 1.3em;
 }
+.researcher-info h3 > span {
+  display: inline-block;
+  white-space: normal;
+}
 .researcher-info h3 p {
   display: block;
   font-size: 0.8em;
   font-weight: normal;
 }
-.achievement-row {
+.achievement-row,
+.award-row {
   position: relative;
   z-index: 1;
   height: 100px;
-  min-height: 50px;
-  padding: 20px 0 0;
+  min-height: 38px;
+  padding: 28px 0 0;
 }
-.achievement-col {
+.achievement-row + .achievement-row {
+  margin-top: 14px;
+}
+.achievement-col,
+.award-col {
   float: left;
   display: flex;
   flex-direction: column-reverse;
@@ -600,7 +655,8 @@ section.career-chart-container {
   height: 100%;
   margin: 0 4px 0 0;
 }
-.achievement-cell {
+.achievement-cell,
+.award-cell {
   width: 100%;
   height: 5px;
   margin: 1px 0 0;
@@ -608,11 +664,24 @@ section.career-chart-container {
 }
 .achievement-cell.item-first-or-corresp { background: var(--color-purple); opacity: 0.8; }
 .achievement-cell.item-other            { background: var(--color-purple); opacity: 0.4; }
+.award-cell.item-international { background: var(--color-award-international); }
+.award-cell.item-domestic      { background: var(--color-award-domestic); }
+.award-cell.item-private       { background: var(--color-award-private); }
+.award-cell.item-other         { background: var(--color-award-other); }
 .grant-row,
 .edujob-row {
   position: relative;
   z-index: 1;
+  padding: 28px 0 0;
+}
+.grant-data-row,
+.edujob-data-row {
+  position: relative;
+  z-index: 1;
   height: 30px;
+}
+.career-event-chart h3 + .career-event-row {
+  margin-top: 28px;
 }
 .grant-cell,
 .edujob-cell {
@@ -668,7 +737,7 @@ section.career-chart-container {
 .career-event-chart {
   position: relative;
   z-index: 10;
-  padding: 10px 0;
+  padding: 7px 0;
 }
 .career-event-chart .career-event-row {
   position: relative;

@@ -1,3 +1,4 @@
+const SYSTEM_VERSION = '1.7.4';
 const $ = (id) => document.getElementById(id);
 const DISPLAY_OPTION_LS_KEY = "CareerChartDisplayOptions";
 const CAREER_EVENTS_LS_KEY  = "CareerChartCareerEvents";
@@ -42,6 +43,7 @@ var app = new Vue({
     career: {
       educationsAndJobs: [],
       grants: [],
+      awards: [],
       achievements: {
         journal:      {total: 0},
         intlConf:     {total: 0},
@@ -61,6 +63,11 @@ var app = new Vue({
           journal:      true,
           intlConf:     true,
           domesticConf: true,
+          awards: true,
+          awardInternational: true,
+          awardDomestic: true,
+          awardPrivate: true,
+          awardOther: true,
           notFirstCorrespAchievement: true,
           notReviewedAchievement: true,
           notPIgrants:  true,
@@ -69,6 +76,7 @@ var app = new Vue({
       },
       educationsAndJobs: [],
       grants: [],
+      awards: {},
       achievements: {
         journal:      [],
         intlConf:     [],
@@ -79,6 +87,12 @@ var app = new Vue({
     },
     achievementTypeList: ['journal', 'intlConf', 'domesticConf'],
     achievementNameList: {'journal': '論文誌・ジャーナル', 'intlConf': '国際会議プロシーディングス', 'domesticConf': '国内研究会・シンポジウム'},
+    awardCategoryNameList: {
+      international: '国際学術賞',
+      domestic: '国内学術賞',
+      private: '民間・財団等の賞',
+      other: 'その他・未設定'
+    },
     importData: '',
     careerEventLayoutFrame: null,
   },
@@ -112,6 +126,11 @@ var app = new Vue({
             journal:      Boolean(this.chart.settings.visibility.journal),
             intlConf:     Boolean(this.chart.settings.visibility.intlConf),
             domesticConf: Boolean(this.chart.settings.visibility.domesticConf),
+            awards: Boolean(this.chart.settings.visibility.awards),
+            awardInternational: Boolean(this.chart.settings.visibility.awardInternational),
+            awardDomestic: Boolean(this.chart.settings.visibility.awardDomestic),
+            awardPrivate: Boolean(this.chart.settings.visibility.awardPrivate),
+            awardOther: Boolean(this.chart.settings.visibility.awardOther),
             notFirstCorrespAchievement: Boolean(this.chart.settings.visibility.notFirstCorrespAchievement),
             notReviewedAchievement: Boolean(this.chart.settings.visibility.notReviewedAchievement),
             notPIgrants:  Boolean(this.chart.settings.visibility.notPIgrants),
@@ -142,6 +161,11 @@ var app = new Vue({
           if ("journal" in v)      vis.journal = Boolean(v.journal);
           if ("intlConf" in v)     vis.intlConf = Boolean(v.intlConf);
           if ("domesticConf" in v) vis.domesticConf = Boolean(v.domesticConf);
+          if ("awards" in v) vis.awards = Boolean(v.awards);
+          if ("awardInternational" in v) vis.awardInternational = Boolean(v.awardInternational);
+          if ("awardDomestic" in v) vis.awardDomestic = Boolean(v.awardDomestic);
+          if ("awardPrivate" in v) vis.awardPrivate = Boolean(v.awardPrivate);
+          if ("awardOther" in v) vis.awardOther = Boolean(v.awardOther);
           if ("notFirstCorrespAchievement" in v) vis.notFirstCorrespAchievement = Boolean(v.notFirstCorrespAchievement);
           if ("notReviewedAchievement" in v) vis.notReviewedAchievement = Boolean(v.notReviewedAchievement);
           if ("notPIgrants" in v)  vis.notPIgrants = Boolean(v.notPIgrants);
@@ -186,6 +210,7 @@ var app = new Vue({
       this.career = {
         educationsAndJobs: [],
         grants: [],
+        awards: [],
         achievements: {
           journal:      { total: 0 },
           intlConf:     { total: 0 },
@@ -203,6 +228,7 @@ var app = new Vue({
 
       this.chart.educationsAndJobs = [];
       this.chart.grants = [];
+      this.chart.awards = {};
       this.chart.achievements = { journal: [], intlConf: [], domesticConf: [] };
       this.chart.events = [];
 
@@ -272,6 +298,21 @@ var app = new Vue({
           && systemName.includes('科学研究費助成事業');
         this.career.grants.push({'yearFrom': yearFrom, 'yearTo': yearTo, 'name': grantName, 'role': grantRole, 'isKakenhi': isKakenhi});
         this.updateCareerPeriod(yearFrom.year, yearTo.year);
+      }
+      // Awards
+      for(const award of (this.rmJson.awards || [])) {
+        if(!award.award_date) continue;
+        const awardDate = this.getFinancialYear(award.award_date);
+        const awardName = this.getLocalizedText(award.award_name);
+        const awardTitle = this.getLocalizedText(award.award_title);
+        const name = [awardName, awardTitle].filter(Boolean).join('：');
+        if(!name) continue;
+        this.career.awards.push({
+          date: awardDate,
+          name: name,
+          category: this.getAwardCategory(award.award_type)
+        });
+        this.updateCareerPeriod(awardDate.year, awardDate.year);
       }
       // Achievement History (paper)
       for(let i=0; i<this.rmJson.published_papers.length; i++) {
@@ -358,6 +399,29 @@ var app = new Vue({
       } else if('en' in edu) {
         return edu.en;
       }
+    },
+    getLocalizedText(value) {
+      if(!value || typeof value !== 'object') return '';
+      return value.ja || value.en || '';
+    },
+    getAwardCategory(awardType) {
+      if(awardType === 'international_academic_award' || awardType === 'international_society') {
+        return 'international';
+      }
+      if(awardType === 'japan_society' || awardType === 'official_journal') {
+        return 'domestic';
+      }
+      if(awardType === 'publisher') return 'private';
+      return 'other';
+    },
+    isAwardCategoryVisible(category) {
+      const visibilityKey = {
+        international: 'awardInternational',
+        domestic: 'awardDomestic',
+        private: 'awardPrivate',
+        other: 'awardOther'
+      }[category];
+      return visibilityKey ? this.chart.settings.visibility[visibilityKey] : false;
     },
     getEduName(edu) {
       if('ja' in edu) {
@@ -476,7 +540,10 @@ var app = new Vue({
       // set CSS property
       this.updateCellWidth();
       // check data
-      if(this.career.educationsAndJobs.length == 0 && this.career.grants.length == 0) return;
+      if(this.career.educationsAndJobs.length == 0
+        && this.career.grants.length == 0
+        && this.career.awards.length == 0
+        && this.career.achievements.total == 0) return;
       // Education and Job History
       let edujob = this.career.educationsAndJobs.sort((a, b) => a.yearFrom.year - b.yearFrom.year);
       for(let i=0; i<edujob.length; i++) {
@@ -522,6 +589,21 @@ var app = new Vue({
           }
         }
       }
+      // Awards
+      this.chart.awards = {};
+      for(let i=this.chart.firstYear; i<=this.chart.latestYear; i++) {
+        this.chart.awards[String(i)] = [];
+      }
+      for(const award of this.career.awards) {
+        const year = String(award.date.year);
+        if(year in this.chart.awards && this.isAwardCategoryVisible(award.category)) {
+          this.chart.awards[year].push(award.category);
+        }
+      }
+      const awardOrder = { international: 0, domestic: 1, private: 2, other: 3 };
+      for(const awards of Object.values(this.chart.awards)) {
+        awards.sort((a, b) => awardOrder[a] - awardOrder[b]);
+      }
       // Achievement History (paper)
       for(let achvmntType of this.achievementTypeList) {
         this.chart.achievements[achvmntType] = {};
@@ -563,6 +645,7 @@ var app = new Vue({
       // reset plot data
       this.chart.educationsAndJobs = [];
       this.chart.grants = [];
+      this.chart.awards = {};
       this.chart.achievements = { journal: [], intlConf: [], domesticConf: [] };
       this.plotCareerChart();
     },
@@ -677,6 +760,13 @@ var app = new Vue({
           achvmnt = achvmnt.filter(n => n == 1);
         }
         maxLength = Math.max(maxLength, achvmnt.length);
+      }
+      return maxLength;
+    },
+    getAwardRowHeight() {
+      let maxLength = 0;
+      for(const awards of Object.values(this.chart.awards)) {
+        maxLength = Math.max(maxLength, awards.length);
       }
       return maxLength;
     },
@@ -899,11 +989,11 @@ var app = new Vue({
   },
   computed: {
     dataQualitySuggestions: function() {
-      if(!this.rmJson || !Array.isArray(this.rmJson.published_papers)) return [];
-      const makeItem = paper => {
+      if(!this.rmJson) return [];
+      const permalink = this.researcher.permalink || '';
+      const makePaperItem = paper => {
         const title = (paper.paper_title && (paper.paper_title.ja || paper.paper_title.en)) || 'タイトル未登録';
         const id = paper._rmId || '';
-        const permalink = this.researcher.permalink || '';
         return {
           title: title,
           date: paper.publication_date || '',
@@ -911,21 +1001,38 @@ var app = new Vue({
             ? `https://researchmap.jp/${encodeURIComponent(permalink)}/published_papers/${encodeURIComponent(id)}` : ''
         };
       };
-      const papers = this.rmJson.published_papers;
+      const makeAwardItem = award => {
+        const awardName = (award.award_name && (award.award_name.ja || award.award_name.en)) || '賞名未登録';
+        const awardTitle = award.award_title && (award.award_title.ja || award.award_title.en);
+        const id = award._rmId || '';
+        return {
+          title: awardTitle ? `${awardName}：${awardTitle}` : awardName,
+          date: award.award_date || '',
+          url: (permalink && id)
+            ? `https://researchmap.jp/${encodeURIComponent(permalink)}/awards/${encodeURIComponent(id)}` : ''
+        };
+      };
+      const papers = Array.isArray(this.rmJson.published_papers) ? this.rmJson.published_papers : [];
+      const awards = Array.isArray(this.rmJson.awards) ? this.rmJson.awards : [];
       return [
         {
           key: 'paper-type',
           label: '掲載種別が登録されていない文献',
-          items: papers.filter(paper => !paper.published_paper_type).map(makeItem)
+          items: papers.filter(paper => !paper.published_paper_type).map(makePaperItem)
         },
         {
           key: 'referee',
           label: '査読有り無し情報が登録されていない文献',
-          items: papers.filter(paper => typeof paper.referee !== 'boolean').map(makeItem)
+          items: papers.filter(paper => typeof paper.referee !== 'boolean').map(makePaperItem)
+        },
+        {
+          key: 'award-type',
+          label: '受賞区分が登録されていない受賞',
+          items: awards.filter(award => !award.award_type).map(makeAwardItem)
         }
       ].filter(suggestion => suggestion.items.length > 0);
     },
-    systemVersion: function() { return 'v1.7.3'; }
+    systemVersion: function() { return SYSTEM_VERSION; }
   }
 });
 

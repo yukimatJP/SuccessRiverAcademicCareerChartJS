@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=arrow_back,list_arrow,close,code,download,edit_calendar,file_open,format_list_bulleted_add,print,tips_and_updates,tune,upload_file" rel="stylesheet" />
-<link rel="stylesheet" href="css/style.css?v=1.7.3">
+<link rel="stylesheet" href="css/style.css?v=1.7.4">
 <div class="app" id="app" :class="{embed: isEmbeddingMode, print:isPrintingMode}">
 <header class="clearfix">
   <h1>SuccessRiver AcademicCareerChart (${ systemVersion })</h1>
@@ -120,6 +120,52 @@
       </dd>
     </div>
     <div class="chart-setting-group">
+      <dt>受賞</dt>
+      <dd>
+        <ul class="clearfix">
+          <li>
+            <input type="checkbox" id="disp-setting-awards"
+                   v-model="chart.settings.visibility.awards"
+                   @change="replotCareerChart">
+            <label for="disp-setting-awards">受賞を表示する</label>
+          </li>
+        </ul>
+      </dd>
+      <dd class="achievement-scope-option">
+        <span class="achievement-scope-heading">受賞区分の表示範囲</span>
+        <div class="achievement-scope-controls">
+          <label class="toggle-switch" for="disp-setting-award-international">
+            <input type="checkbox" id="disp-setting-award-international"
+                   v-model="chart.settings.visibility.awardInternational"
+                   @change="replotCareerChart">
+            <span class="toggle-switch-track" aria-hidden="true"></span>
+            <span class="toggle-switch-label">国際学術賞を表示する</span>
+          </label>
+          <label class="toggle-switch" for="disp-setting-award-domestic">
+            <input type="checkbox" id="disp-setting-award-domestic"
+                   v-model="chart.settings.visibility.awardDomestic"
+                   @change="replotCareerChart">
+            <span class="toggle-switch-track" aria-hidden="true"></span>
+            <span class="toggle-switch-label">国内学術賞を表示する</span>
+          </label>
+          <label class="toggle-switch" for="disp-setting-award-private">
+            <input type="checkbox" id="disp-setting-award-private"
+                   v-model="chart.settings.visibility.awardPrivate"
+                   @change="replotCareerChart">
+            <span class="toggle-switch-track" aria-hidden="true"></span>
+            <span class="toggle-switch-label">民間・財団等の賞を表示する</span>
+          </label>
+          <label class="toggle-switch" for="disp-setting-award-other">
+            <input type="checkbox" id="disp-setting-award-other"
+                   v-model="chart.settings.visibility.awardOther"
+                   @change="replotCareerChart">
+            <span class="toggle-switch-track" aria-hidden="true"></span>
+            <span class="toggle-switch-label">その他・未設定の賞を表示する</span>
+          </label>
+        </div>
+      </dd>
+    </div>
+    <div class="chart-setting-group">
       <dt>獲得予算</dt>
       <dd class="achievement-scope-option">
         <span class="achievement-scope-heading">予算の表示範囲</span>
@@ -200,8 +246,13 @@
         <div class="achievement-row"
              v-for="type in achievementTypeList"
              v-if="chart.settings.visibility[type]"
-             :style="{height: (30 + 6 * getAchievementRowHeight(type)) + 'px'}">
-          <h3><span>${ achievementNameList[type] }</span></h3>
+             :style="{height: (38 + 6 * getAchievementRowHeight(type)) + 'px'}">
+          <h3><span>${ achievementNameList[type] }
+            <small class="chart-legend">
+              <i class="legend-achievement-primary">主著・責任著者</i>
+              <i class="legend-achievement-other">その他</i>
+            </small>
+          </span></h3>
           <div class="achievement-col"
                v-for="(col, i) in chart.achievements[type]">
             <span class="achievement-cell"></span>
@@ -212,28 +263,61 @@
           </div>
         </div>
       </div>
+      <div class="award-chart" v-if="chart.settings.visibility.awards && career.awards.length">
+        <div class="award-row" :style="{height: (38 + 6 * getAwardRowHeight()) + 'px'}">
+          <h3><span>受賞
+            <small class="chart-legend" aria-label="受賞区分の凡例">
+              <i class="legend-award-international" v-if="chart.settings.visibility.awardInternational">国際</i>
+              <i class="legend-award-domestic" v-if="chart.settings.visibility.awardDomestic">国内</i>
+              <i class="legend-award-private" v-if="chart.settings.visibility.awardPrivate">民間・財団</i>
+              <i class="legend-award-other" v-if="chart.settings.visibility.awardOther">その他</i>
+            </small>
+          </span></h3>
+          <div class="award-col" v-for="awards in chart.awards">
+            <span class="award-cell"></span>
+            <span class="award-cell item"
+                  v-for="award in awards"
+                  :class="'item-' + award"
+                  :title="awardCategoryNameList[award]"></span>
+          </div>
+        </div>
+      </div>
       <div class="grant-chart">
-        <h3><span>予算獲得状況</span></h3>
-        <div class="grant-row"
-             v-for="(row, i) in chart.grants.slice().reverse()">
-          <span class="grant-cell"
-                v-for="(item, j) in row"
-                :class="{'isPI': item.isPI, 'isnotPI': !item.isPI}"
-                :style="getStackCellStyle(item)">
-            <span v-html="item.name"></span>
-          </span>
+        <div class="grant-row">
+          <h3><span>予算獲得状況
+            <small class="chart-legend">
+              <i class="legend-grant-primary">代表</i>
+              <i class="legend-grant-other">代表以外</i>
+            </small>
+          </span></h3>
+          <div class="grant-data-row"
+               v-for="(row, i) in chart.grants.slice().reverse()">
+            <span class="grant-cell"
+                  v-for="(item, j) in row"
+                  :class="{'isPI': item.isPI, 'isnotPI': !item.isPI}"
+                  :style="getStackCellStyle(item)">
+              <span v-html="item.name"></span>
+            </span>
+          </div>
         </div>
       </div>
       <div class="edujob-chart">
-        <h3><span>学歴・職歴</span></h3>
-        <div class="edujob-row"
-             v-for="(row, i) in chart.educationsAndJobs.slice().reverse()">
-          <span class="edujob-cell"
-                v-for="(item, j) in row"
-                :class="{'edu-cell': item.isEdu, 'job-cell': !item.isEdu}"
-                :style="getStackCellStyle(item)">
-            <span v-html="item.name"></span>
-          </span>
+        <div class="edujob-row">
+          <h3><span>学歴・職歴
+            <small class="chart-legend">
+              <i class="legend-job">職歴</i>
+              <i class="legend-education">学歴</i>
+            </small>
+          </span></h3>
+          <div class="edujob-data-row"
+               v-for="(row, i) in chart.educationsAndJobs.slice().reverse()">
+            <span class="edujob-cell"
+                  v-for="(item, j) in row"
+                  :class="{'edu-cell': item.isEdu, 'job-cell': !item.isEdu}"
+                  :style="getStackCellStyle(item)">
+              <span v-html="item.name"></span>
+            </span>
+          </div>
         </div>
       </div>
       <div class="career-event-chart" v-if="chart.events && chart.events.length">
@@ -299,6 +383,8 @@
       <button type="button" class="ic ic-20 ic-remove" aria-label="閉じる" @click="closeReleaseNotes">閉じる</button>
     </div>
     <dl>
+      <dt>2026/09/02 (v1.7.4)</dt>
+      <dd>受賞カテゴリを表示できるようにしました。また、チャート可視化を微調整しました。</dd>
       <dt>2026/09/01 (v1.7.3)</dt>
       <dd>UIを改善・調整しました。キャリアイベントをソートできるようになりました。</dd>
       <dt>2026/08/31 (v1.7.2)</dt>
@@ -341,5 +427,5 @@
 </footer>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js"></script>
-<script src="js/main.js?v=1.7.3"></script>
+<script src="js/main.js?v=1.7.4"></script>
 </html>
