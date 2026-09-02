@@ -27,6 +27,8 @@ Githubリポジトリ： <a href="https://github.com/yukimatJP/SuccessRiverAcade
 
 ## Release Note
 
+- 2026/09/03 (v2.1.1)
+  研究資金・職歴・イベントの非表示機能を実装しました。また、インタフェースを改善しました。
 - 2026/09/03 (v2.1)
   カテゴリごとの可視化ルールをDocumentationとしてまとめ、ヘッダーとフッターから確認できるようにしました。
 - 2026/09/02 (v2.0)

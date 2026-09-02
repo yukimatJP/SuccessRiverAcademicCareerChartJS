@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = '2.1';
+const SYSTEM_VERSION = '2.1.1';
 const $ = (id) => document.getElementById(id);
 const DISPLAY_OPTION_LS_KEY = "CareerChartDisplayOptions";
 const CAREER_EVENTS_LS_KEY  = "CareerChartCareerEvents";
@@ -64,6 +64,9 @@ var app = new Vue({
           intlConf:     true,
           domesticConf: true,
           awards: true,
+          grants: true,
+          educationAndJobs: true,
+          careerEvents: true,
           awardInternational: true,
           awardDomestic: true,
           awardPrivate: true,
@@ -85,8 +88,11 @@ var app = new Vue({
       events: [],
       eventRowHeight: 30,
     },
-    achievementTypeList: ['journal', 'intlConf', 'domesticConf'],
-    achievementNameList: {'journal': '論文誌・ジャーナル', 'intlConf': '国際会議プロシーディングス', 'domesticConf': '国内研究会・シンポジウム'},
+    achievementCategoryNameList: {
+      journal: '論文誌・ジャーナル',
+      intlConf: '国際会議プロシーディングス',
+      domesticConf: '国内研究会・シンポジウム'
+    },
     awardCategoryNameList: {
       international: '国際学術賞',
       domestic: '国内学術賞',
@@ -95,11 +101,17 @@ var app = new Vue({
     },
     importData: '',
     careerEventLayoutFrame: null,
+    previewStickyReleased: false,
+    previewStickyReleaseOffset: 0,
+  },
+  mounted: function() {
+    window.addEventListener('scroll', this.restorePreviewSticky, { passive: true });
   },
   beforeDestroy: function() {
     if (this.careerEventLayoutFrame !== null) {
       cancelAnimationFrame(this.careerEventLayoutFrame);
     }
+    window.removeEventListener('scroll', this.restorePreviewSticky);
   },
   methods: {
     initialize: function() {
@@ -127,6 +139,9 @@ var app = new Vue({
             intlConf:     Boolean(this.chart.settings.visibility.intlConf),
             domesticConf: Boolean(this.chart.settings.visibility.domesticConf),
             awards: Boolean(this.chart.settings.visibility.awards),
+            grants: Boolean(this.chart.settings.visibility.grants),
+            educationAndJobs: Boolean(this.chart.settings.visibility.educationAndJobs),
+            careerEvents: Boolean(this.chart.settings.visibility.careerEvents),
             awardInternational: Boolean(this.chart.settings.visibility.awardInternational),
             awardDomestic: Boolean(this.chart.settings.visibility.awardDomestic),
             awardPrivate: Boolean(this.chart.settings.visibility.awardPrivate),
@@ -162,6 +177,9 @@ var app = new Vue({
           if ("intlConf" in v)     vis.intlConf = Boolean(v.intlConf);
           if ("domesticConf" in v) vis.domesticConf = Boolean(v.domesticConf);
           if ("awards" in v) vis.awards = Boolean(v.awards);
+          if ("grants" in v) vis.grants = Boolean(v.grants);
+          if ("educationAndJobs" in v) vis.educationAndJobs = Boolean(v.educationAndJobs);
+          if ("careerEvents" in v) vis.careerEvents = Boolean(v.careerEvents);
           if ("awardInternational" in v) vis.awardInternational = Boolean(v.awardInternational);
           if ("awardDomestic" in v) vis.awardDomestic = Boolean(v.awardDomestic);
           if ("awardPrivate" in v) vis.awardPrivate = Boolean(v.awardPrivate);
@@ -198,6 +216,8 @@ var app = new Vue({
       this.rmFile = null;
       this.rmJson = null;
       this.sourceDateLabel = '';
+      this.previewStickyReleased = false;
+      this.previewStickyReleaseOffset = 0;
 
       this.importData = '';
 
@@ -605,7 +625,7 @@ var app = new Vue({
         awards.sort((a, b) => awardOrder[a] - awardOrder[b]);
       }
       // Achievement History (paper)
-      for(let achvmntType of this.achievementTypeList) {
+      for(const achvmntType of Object.keys(this.achievementCategoryNameList)) {
         this.chart.achievements[achvmntType] = {};
         for(let i=this.chart.firstYear; i<=this.chart.latestYear; i++) {
           let year = String(i);
@@ -752,6 +772,36 @@ var app = new Vue({
     onScrollChart(e) {
       const chart = e.currentTarget || e.target;
       document.documentElement.style.setProperty('--chart-header-position', chart.scrollLeft + "px");
+    },
+    getElementDocumentTop(element) {
+      let top = 0;
+      for(let node = element; node; node = node.offsetParent) top += node.offsetTop;
+      return top;
+    },
+    releasePreviewSticky(e) {
+      if(this.previewStickyReleased || window.innerWidth < 1200) return;
+      if(Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+
+      const preview = e.currentTarget;
+      if(getComputedStyle(preview).position !== 'sticky') return;
+
+      const stickyTop = 50;
+      const rect = preview.getBoundingClientRect();
+      if(rect.top > stickyTop + 1) return;
+
+      const naturalTop = this.getElementDocumentTop(preview);
+      this.previewStickyReleaseOffset = Math.max(0, window.scrollY + rect.top - naturalTop);
+      this.previewStickyReleased = true;
+    },
+    restorePreviewSticky() {
+      if(!this.previewStickyReleased) return;
+      const preview = this.$el.querySelector('.career-chart-container');
+      if(!preview) return;
+      const naturalTop = this.getElementDocumentTop(preview);
+      if(window.scrollY <= naturalTop - 50) {
+        this.previewStickyReleased = false;
+        this.previewStickyReleaseOffset = 0;
+      }
     },
     getAchievementRowHeight(type) {
       let maxLength = 0;
@@ -947,15 +997,16 @@ var app = new Vue({
       }
       // Achievement History (paper)
       let achievements = d[12].split(',');
+      const achievementTypes = Object.keys(this.achievementCategoryNameList);
       for(let i=0; i<achievements.length; i++) {
         let tmp = achievements[i].split('_');
         for(let j=0; j<tmp.length; j++) {
           let achvmntYear = String(j + this.chart.firstYear);
-          if(this.achievementTypeList[i] != undefined && tmp[j] != '') {
+          if(achievementTypes[i] != undefined && tmp[j] != '') {
             let [firstCorresp, other] = tmp[j].split('-');
             firstCorresp = (firstCorresp == '') ? 0 : parseInt(firstCorresp);
             other = (other == '') ? 0 : parseInt(other);
-            this.career.achievements[this.achievementTypeList[i]][achvmntYear] = {
+            this.career.achievements[achievementTypes[i]][achvmntYear] = {
               'firstCorresp': firstCorresp, 'first': 0, 'corresp': 0, 'other': other, 'total': firstCorresp + other,
               'reviewed': {'firstCorresp': firstCorresp, 'first': 0, 'corresp': 0, 'other': other, 'total': firstCorresp + other}
             };
