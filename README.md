@@ -27,6 +27,8 @@ Githubリポジトリ： <a href="https://github.com/yukimatJP/SuccessRiverAcade
 
 ## Release Note
 
+- 2026/09/03 (v2.1)
+  カテゴリごとの可視化ルールをDocumentationとしてまとめ、ヘッダーとフッターから確認できるようにしました。
 - 2026/09/02 (v2.0)
   システム名称を「SRACC（SuccessRiver AcademicCareerChart）」に変更しました。
 - 2026/09/02 (v1.7.4)

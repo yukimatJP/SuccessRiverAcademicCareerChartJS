@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = '2.0';
+const SYSTEM_VERSION = '2.1';
 const $ = (id) => document.getElementById(id);
 const DISPLAY_OPTION_LS_KEY = "CareerChartDisplayOptions";
 const CAREER_EVENTS_LS_KEY  = "CareerChartCareerEvents";
@@ -805,6 +805,20 @@ var app = new Vue({
       if(dialog && dialog.open) dialog.close();
     },
     onReleaseNotesClosed() {
+      document.body.classList.remove('modal-open');
+    },
+    openDocumentation() {
+      const dialog = this.$refs.documentationDialog;
+      if(dialog && !dialog.open) {
+        document.body.classList.add('modal-open');
+        dialog.showModal();
+      }
+    },
+    closeDocumentation() {
+      const dialog = this.$refs.documentationDialog;
+      if(dialog && dialog.open) dialog.close();
+    },
+    onDocumentationClosed() {
       document.body.classList.remove('modal-open');
     },
     async exportHTML() {

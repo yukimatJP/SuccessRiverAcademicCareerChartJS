@@ -10,13 +10,14 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=arrow_back,list_arrow,close,code,download,edit_calendar,file_open,format_list_bulleted_add,print,tips_and_updates,tune,upload_file" rel="stylesheet" />
-<link rel="stylesheet" href="css/style.css?v=2.0">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=arrow_back,list_arrow,close,code,description,download,edit_calendar,file_open,format_list_bulleted_add,print,tips_and_updates,tune,upload_file" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css?v=2.1">
 <div class="app" id="app" :class="{embed: isEmbeddingMode, print:isPrintingMode}">
 <header class="clearfix">
   <h1>SRACC<span>SuccessRiver AcademicCareerChart (v${ systemVersion })</span></h1>
   <nav>
     <ul>
+      <li><button type="button" class="ic ic-24 ic-documentation" @click="openDocumentation">Documentation</button></li>
       <li><a href="https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS" class="ic ic-24 ic-github">Github</a>
     </ul>
   </nav>
@@ -369,6 +370,8 @@
           なお、クレジットを表記いただける場合には、<code>このキャリアイベント図は、&lt;a href="https://career-chart.yukimat.jp/"&gt;SRACC (v${ systemVersion }) by @yukimatJP&lt;/a&gt;を用いて作成されました。</code> といった形で紹介ください。
           また、SNSなどでこのシステムを紹介いただくのも大歓迎します。
         </dd>
+        <dt>Documentation</dt>
+        <dd><button type="button" class="release-note-open" @click="openDocumentation">可視化ルールを表示する</button></dd>
         <dt>リリースノート</dt>
         <dd><button type="button" class="release-note-open" @click="openReleaseNotes">更新履歴を表示する</button></dd>
       </dl>
@@ -383,6 +386,8 @@
       <button type="button" class="ic ic-20 ic-remove" aria-label="閉じる" @click="closeReleaseNotes">閉じる</button>
     </div>
     <dl>
+      <dt>2026/09/03 (v2.1)</dt>
+      <dd>カテゴリごとの可視化ルールをDocumentationとしてまとめ、ヘッダーとフッターから確認できるようにしました。</dd>
       <dt>2026/09/02 (v2.0)</dt>
       <dd>システム名称を「SRACC（SuccessRiver AcademicCareerChart）」に変更しました。</dd>
       <dt>2026/09/02 (v1.7.4)</dt>
@@ -423,11 +428,67 @@
       <dd>本システムは週末ひとりハッカソンの成果のため、対応していない部分が多々あります（そもそも、自分のresearchmapの使い方が間違えてる部分もありそう）。予算や学歴・職歴のラベルに関してはもう少しいい感じにしたいところです。</dd>
     </dl>
   </dialog>
+  <dialog class="release-note-dialog documentation-dialog" ref="documentationDialog" @click.self="closeDocumentation" @close="onDocumentationClosed">
+    <div class="release-note-dialog-header">
+      <h2>可視化ルール（v${ systemVersion }）</h2>
+      <button type="button" class="ic ic-20 ic-remove" aria-label="閉じる" @click="closeDocumentation">閉じる</button>
+    </div>
+    <article class="documentation-content">
+      <p class="documentation-intro">SRACCは、researchmapから出力されたJSONLの登録内容を、次のルールで年表形式のチャートに変換します。</p>
+
+      <section>
+        <h3>表示期間と年の位置</h3>
+        <p>学歴・職歴、研究費、論文、受賞のうち最も古い年から現在年までを表示します。年月が登録されている項目は、その月の位置を年の横幅に対する比率で配置します。終了年が将来に及ぶ研究費などは、必要な範囲だけ未来領域を延長します。</p>
+      </section>
+
+      <section>
+        <h3>研究業績</h3>
+        <p><code>published_papers</code>の掲載年月と掲載種別を使い、年ごとの件数を積み上げます。</p>
+        <ul>
+          <li><code>scientific_journal</code>： 論文誌・ジャーナル</li>
+          <li><code>international_conference_proceedings</code>： 国際会議プロシーディングス</li>
+          <li><code>symposium</code>： 国内研究会・シンポジウム</li>
+        </ul>
+        <p>筆頭・責任著者は<code>published_paper_owner_roles</code>の<code>lead</code>または<code>corresponding</code>で判定します。筆頭著者情報がない場合は、著者リストの先頭と研究者名を照合します。査読済みは<code>referee</code>が<code>true</code>の項目として扱います。</p>
+      </section>
+
+      <section>
+        <h3>受賞</h3>
+        <p><code>awards</code>の受賞年月を使い、年ごとの件数を区分別に積み上げます。下から国際、国内、民間・財団、その他・未設定の順で表示します。</p>
+        <ul>
+          <li>国際： <code>international_academic_award</code>、<code>international_society</code></li>
+          <li>国内： <code>japan_society</code>、<code>official_journal</code></li>
+          <li>民間・財団： <code>publisher</code></li>
+          <li>その他・未設定： <code>others</code>、未設定または未知の区分</li>
+        </ul>
+      </section>
+
+      <section>
+        <h3>予算獲得状況</h3>
+        <p><code>research_projects</code>の開始年月から終了年月までを横線で表示します。<code>research_project_owner_role</code>が<code>principal_investigator</code>の項目を代表研究者として扱います。科研費は、配分機関に「日本学術振興会」、制度名に「科学研究費助成事業」を含む項目として判定します。</p>
+      </section>
+
+      <section>
+        <h3>学歴・職歴</h3>
+        <p><code>education</code>と<code>research_experience</code>の開始年月から終了年月までを横線で表示します。同じ時期に複数の項目が重なる場合は、別の行へ配置します。日本語表記を優先し、ない場合は英語表記を使用します。</p>
+      </section>
+
+      <section>
+        <h3>キャリアイベント</h3>
+        <p>利用者が入力した年月と内容をチャートへ追加します。近い時期のラベルが重なる場合は、古いイベントを上へ移動します。重なり順も古いイベントを上にします。入力内容はブラウザのLocalStorageに保存されます。</p>
+      </section>
+
+      <section>
+        <h3>登録情報の改善提案</h3>
+        <p>掲載種別または査読情報が未設定の文献と、受賞区分が未設定の受賞を検出します。これらは該当するresearchmap項目へのリンクとともに一覧表示します。</p>
+      </section>
+    </article>
+  </dialog>
   <div class="credit">
     <small>SRACC: SuccessRiver AcademicCareerChart (v${ systemVersion }) by Yuki Matsuda, CC-BY-NC 4.0</small>
   </div>
 </footer>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js"></script>
-<script src="js/main.js?v=2.0"></script>
+<script src="js/main.js?v=2.1"></script>
 </html>

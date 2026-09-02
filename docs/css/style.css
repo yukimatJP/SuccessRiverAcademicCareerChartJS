@@ -74,6 +74,7 @@ h1, h2, h3, h1 *, h2 *, h3 * {
 .ic.ic-step-output:before   { content: "download"; }
 .ic.ic-data-quality:before  { content: "tips_and_updates"; }
 .ic.ic-sort:before          { content: "list_arrow"; }
+.ic.ic-documentation:before { content: "description"; }
 
 .app {
   overflow-x: hidden;
@@ -105,21 +106,46 @@ h1, h2, h3, h1 *, h2 *, h3 * {
 }
 .app > header nav ul {
   padding: 0;
-  margin: 0;
+  margin: 0 12px 0 0;
   float: right;
 }
 .app > header nav ul li {
   display: inline-block;
 }
-.app > header nav ul li a {
+.app > header nav ul li a,
+.app > header nav ul li button {
   display: block;
-  padding: 10px 20px;
+  padding: 10px;
   line-height: 30px;
   color: white;
+  background: transparent;
+  border: 0;
+  font-size: 0.9em;
   text-decoration: none;
+  cursor: pointer;
 }
-.app > header nav ul li a:hover {
+.app > header nav ul li .ic-24::before {
+  top: 3px;
+  padding-right: 5px;
+  font-size: 20px;
+}
+.app > header nav ul li a:hover,
+.app > header nav ul li button:hover {
   background: rgba(255, 255, 255, 0.12);
+}
+@media (max-width: 760px) {
+  .app > header h1 span {
+    display: none;
+  }
+}
+@media (max-width: 480px) {
+  .app > header h1 {
+    padding-inline: 12px;
+  }
+  .app > header nav ul li a,
+  .app > header nav ul li button {
+    padding-inline: 10px;
+  }
 }
 .app-layout {
   display: grid;
@@ -1012,6 +1038,52 @@ body.modal-open {
   font-size: 0.95rem;
   border: 1px dotted #ccc;
   border-width: 0 0 1px;
+}
+.documentation-dialog {
+  width: min(820px, calc(100vw - 40px));
+  word-break: normal;
+}
+.documentation-content {
+  min-height: 0;
+  padding: 18px 30px 24px;
+  overflow-y: auto;
+}
+.documentation-content > * {
+  margin-top: 0;
+}
+.documentation-content .documentation-intro {
+  margin: 0 0 18px;
+  color: #555;
+}
+.documentation-content section {
+  padding: 0 0 16px;
+}
+.documentation-content section + section {
+  padding-top: 16px;
+  border-top: 1px dotted #ccc;
+}
+.documentation-content h3 {
+  margin: 0 0 7px;
+  color: #333;
+  font-size: 1rem;
+}
+.documentation-content p,
+.documentation-content ul {
+  margin: 0;
+  padding: 0;
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+.documentation-content ul {
+  padding: 6px 0 0 24px;
+}
+.documentation-content code {
+  padding: 1px 4px;
+  color: #555;
+  background: #f1f1f1;
+  border-radius: 3px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9em;
 }
 footer .credit {
   padding: 15px;
