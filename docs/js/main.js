@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = '1.7.4';
+const SYSTEM_VERSION = '2.0';
 const $ = (id) => document.getElementById(id);
 const DISPLAY_OPTION_LS_KEY = "CareerChartDisplayOptions";
 const CAREER_EVENTS_LS_KEY  = "CareerChartCareerEvents";

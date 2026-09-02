@@ -89,10 +89,19 @@ h1, h2, h3, h1 *, h2 *, h3 * {
 }
 .app > header h1 {
   float: left;
-  font-size: 1.2em;
+  font-size: 1.4em;
   line-height: 40px;
   padding: 5px 20px;
   color: white;
+}
+.app > header h1 span {
+  display: inline-block;
+  margin-left: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.56em;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  vertical-align: 2px;
 }
 .app > header nav ul {
   padding: 0;

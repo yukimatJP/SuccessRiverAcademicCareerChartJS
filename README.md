@@ -1,7 +1,7 @@
-# SuccessRiver AcademicCareerChart
+# SRACC（SuccessRiver AcademicCareerChart）
 
 ## Overview
-｢SuccessRiver AcademicCareerChart｣は、<a href="https://twitter.com/rei_nari">@rei_nari</a>さん考案のキャリアイベント図をresearchmapに登録された情報から生成します。
+「SRACC（SuccessRiver AcademicCareerChart）」は、<a href="https://twitter.com/rei_nari">@rei_nari</a>さん考案のキャリアイベント図をresearchmapに登録された情報から生成します。
 
 Githubリポジトリ： <a href="https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS">https://github.com/yukimatJP/SuccessRiverAcademicCareerChartJS</a>
 
@@ -15,7 +15,7 @@ Githubリポジトリ： <a href="https://github.com/yukimatJP/SuccessRiverAcade
 出力データの利用について：
 - 本システムで生成されたキャリアイベント図を利用する際に、制作者への連絡やクレジットの表記は不要です。  
   なお、クレジットを表記いただける場合には、
-  ```このキャリアイベント図は、<a href="https://career-chart.yukimat.jp/">SuccessRiver AcademicCareerChart (${ systemVersion }) by @yukimatJP</a> を用いて作成されました。```
+  ```このキャリアイベント図は、<a href="https://career-chart.yukimat.jp/">SRACC by @yukimatJP</a>を用いて作成されました。```
   といった形で紹介ください。  
   また、SNSなどでこのシステムを紹介いただくのも大歓迎します。
 
@@ -27,6 +27,8 @@ Githubリポジトリ： <a href="https://github.com/yukimatJP/SuccessRiverAcade
 
 ## Release Note
 
+- 2026/09/02 (v2.0)
+  システム名称を「SRACC（SuccessRiver AcademicCareerChart）」に変更しました。
 - 2026/09/02 (v1.7.4)
   受賞カテゴリを表示できるようにしました。また、チャート可視化を微調整しました。
 - 2026/09/01 (v1.7.3)
