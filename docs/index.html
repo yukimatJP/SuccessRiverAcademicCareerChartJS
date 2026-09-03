@@ -40,7 +40,10 @@
     <div v-else-if="rmFile == null">
       <label for="researchmap-file-input" class="ic ic-20 ic-file">ファイルを選択</label>
       <input type="file" id="researchmap-file-input" @change="selectResearchmapFile">
-      <p class="file-select-help">researchmapからエクスポートしたJSONL（.jsonl）ファイルを選択してください。</p>
+      <p class="file-select-help">
+        researchmapからエクスポートしたJSONL（.jsonl）ファイルを選択してください。<br>
+        ファイルのエクスポート方法は、<a href="https://guide.researchmap.jp/index.php/Researchmap利用者マニュアル/研究者用/登録、更新/研究者・業績エクスポート">researchmap利用者マニュアル</a> をご覧ください。
+      </p>
     </div>
     <div v-else>
       <p class="selected-file-name" @click="clearCareerChart">

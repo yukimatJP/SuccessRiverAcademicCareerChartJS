@@ -77,6 +77,10 @@ h1, h2, h3, h1 *, h2 *, h3 * {
 .ic.ic-documentation:before { content: "description"; }
 .ic.ic-fullscreen:before    { content: "fullscreen"; }
 
+a {
+  color: var(--color-blue);
+}
+
 .app {
   overflow-x: clip;
 }
@@ -950,9 +954,6 @@ footer {
 }
 footer h2 {
   font-size: 1.2em;
-}
-footer a {
-  color: var(--color-blue);
 }
 footer p {
   padding: 10px 20px 0;
