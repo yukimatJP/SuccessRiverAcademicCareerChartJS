@@ -75,6 +75,7 @@ h1, h2, h3, h1 *, h2 *, h3 * {
 .ic.ic-data-quality:before  { content: "tips_and_updates"; }
 .ic.ic-sort:before          { content: "list_arrow"; }
 .ic.ic-documentation:before { content: "description"; }
+.ic.ic-fullscreen:before    { content: "fullscreen"; }
 
 .app {
   overflow-x: clip;
@@ -189,13 +190,14 @@ h1, h2, h3, h1 *, h2 *, h3 * {
     z-index: 20;
     top: 50px;
     align-self: start;
+    height: calc(100vh - 50px);
+    overflow: hidden;
     padding-left: 10px;
     background: white;
   }
-  .app:not(.print):not(.embed) .app-layout .career-chart-container.chart-loaded.sticky-released {
-    position: relative;
-    top: auto;
-    transform: translateY(var(--sticky-release-offset, 0));
+  .app:not(.print):not(.embed) .app-layout .career-chart-container.chart-loaded .career-chart {
+    height: 100%;
+    overflow: auto;
   }
 }
 @media (max-width: 1199px) {
@@ -519,14 +521,40 @@ section.career-chart-container {
 .chart-as-of-date {
   position: absolute;
   z-index: 30;
-  top: 77px;
-  right: 32px;
+  top: 56px;
+  right: 11px;
   padding: 3px 7px;
   color: #777;
   background: rgba(255, 255, 255, 0.9);
   font-size: 0.8em;
   white-space: nowrap;
+  transform: translateX(var(--chart-header-position));
   pointer-events: none;
+}
+.chart-maximize {
+  position: absolute;
+  z-index: 40;
+  top: 29px;
+  right: 29px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: #666;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.chart-maximize::before {
+  top: 0;
+  padding: 0;
+}
+.chart-maximize:hover {
+  color: #222;
+  background: #eee;
 }
 .career-chart-empty {
   border: 1px solid #ddd;
@@ -550,6 +578,7 @@ section.career-chart-container {
   background: #eee;
 }
 .career-chart {
+  position: relative;
   border: 1px solid #ddd;
   border-radius: 5px;
   width: 100%;
@@ -1128,8 +1157,12 @@ footer .credit {
 }
 .app.embed .chart-as-of-date,
 .app.print .chart-as-of-date {
-  top: 62px;
-  right: 12px;
+  top: 61px;
+  right: 11px;
+}
+.app.embed .chart-maximize,
+.app.print .chart-maximize {
+  display: none;
 }
 .app.embed .app-layout {
   display: block;

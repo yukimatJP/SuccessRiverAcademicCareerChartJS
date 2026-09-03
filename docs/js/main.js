@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = '2.1.1';
+const SYSTEM_VERSION = '2.1.2';
 const $ = (id) => document.getElementById(id);
 const DISPLAY_OPTION_LS_KEY = "CareerChartDisplayOptions";
 const CAREER_EVENTS_LS_KEY  = "CareerChartCareerEvents";
@@ -101,17 +101,11 @@ var app = new Vue({
     },
     importData: '',
     careerEventLayoutFrame: null,
-    previewStickyReleased: false,
-    previewStickyReleaseOffset: 0,
-  },
-  mounted: function() {
-    window.addEventListener('scroll', this.restorePreviewSticky, { passive: true });
   },
   beforeDestroy: function() {
     if (this.careerEventLayoutFrame !== null) {
       cancelAnimationFrame(this.careerEventLayoutFrame);
     }
-    window.removeEventListener('scroll', this.restorePreviewSticky);
   },
   methods: {
     initialize: function() {
@@ -216,8 +210,6 @@ var app = new Vue({
       this.rmFile = null;
       this.rmJson = null;
       this.sourceDateLabel = '';
-      this.previewStickyReleased = false;
-      this.previewStickyReleaseOffset = 0;
 
       this.importData = '';
 
@@ -772,36 +764,6 @@ var app = new Vue({
     onScrollChart(e) {
       const chart = e.currentTarget || e.target;
       document.documentElement.style.setProperty('--chart-header-position', chart.scrollLeft + "px");
-    },
-    getElementDocumentTop(element) {
-      let top = 0;
-      for(let node = element; node; node = node.offsetParent) top += node.offsetTop;
-      return top;
-    },
-    releasePreviewSticky(e) {
-      if(this.previewStickyReleased || window.innerWidth < 1200) return;
-      if(Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
-
-      const preview = e.currentTarget;
-      if(getComputedStyle(preview).position !== 'sticky') return;
-
-      const stickyTop = 50;
-      const rect = preview.getBoundingClientRect();
-      if(rect.top > stickyTop + 1) return;
-
-      const naturalTop = this.getElementDocumentTop(preview);
-      this.previewStickyReleaseOffset = Math.max(0, window.scrollY + rect.top - naturalTop);
-      this.previewStickyReleased = true;
-    },
-    restorePreviewSticky() {
-      if(!this.previewStickyReleased) return;
-      const preview = this.$el.querySelector('.career-chart-container');
-      if(!preview) return;
-      const naturalTop = this.getElementDocumentTop(preview);
-      if(window.scrollY <= naturalTop - 50) {
-        this.previewStickyReleased = false;
-        this.previewStickyReleaseOffset = 0;
-      }
     },
     getAchievementRowHeight(type) {
       let maxLength = 0;

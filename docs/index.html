@@ -10,8 +10,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=arrow_back,list_arrow,close,code,description,download,edit_calendar,file_open,format_list_bulleted_add,print,tips_and_updates,tune,upload_file" rel="stylesheet" />
-<link rel="stylesheet" href="css/style.css?v=2.1.1">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=arrow_back,list_arrow,close,code,description,download,edit_calendar,file_open,format_list_bulleted_add,fullscreen,print,tips_and_updates,tune,upload_file" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css?v=2.1.2">
 <div class="app" id="app" :class="{embed: isEmbeddingMode, print:isPrintingMode}">
 <header class="clearfix">
   <h1>SRACC<span>SuccessRiver AcademicCareerChart (v${ systemVersion })</span></h1>
@@ -256,13 +256,16 @@
   </details>
 </section>
  </div>
-<section class="career-chart-container"
-         :class="{ 'chart-loaded': rmJson, 'sticky-released': previewStickyReleased }"
-         :style="previewStickyReleased ? { '--sticky-release-offset': previewStickyReleaseOffset + 'px' } : null"
-         @wheel.passive="releasePreviewSticky">
-  <p class="chart-as-of-date" v-if="sourceDateLabel">${ sourceDateLabel }</p>
+<section class="career-chart-container" :class="{ 'chart-loaded': rmJson }">
+  <button type="button"
+          class="chart-maximize ic ic-20 ic-fullscreen"
+          v-if="chart.latestYear"
+          title="チャートを最大化"
+          aria-label="チャートを最大化"
+          @click="printChart"></button>
   <div class="career-chart-empty" v-if="!chart.latestYear"><label for="researchmap-file-input"><span class="ic ic-20 ic-file">ファイルを選択してください</span></label></div>
   <div class="career-chart" v-if="chart.latestYear" @scroll="onScrollChart">
+    <p class="chart-as-of-date" v-if="sourceDateLabel">${ sourceDateLabel }</p>
     <div class="career-chart-wrap" id="career-chart-wrap">
       <div class="year-background">
         <div
@@ -426,6 +429,8 @@
       <button type="button" class="ic ic-20 ic-remove" aria-label="閉じる" @click="closeReleaseNotes">閉じる</button>
     </div>
     <dl>
+      <dt>2026/09/03 (v2.1.2)</dt>
+      <dd>チャートプレビュー画面のスクロールの不具合を改善しました。</dd>
       <dt>2026/09/03 (v2.1.1)</dt>
       <dd>研究資金・職歴・イベントの非表示機能を実装しました。また、インタフェースを改善しました。</dd>
       <dt>2026/09/03 (v2.1)</dt>
@@ -532,5 +537,5 @@
 </footer>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js"></script>
-<script src="js/main.js?v=2.1.1"></script>
+<script src="js/main.js?v=2.1.2"></script>
 </html>
